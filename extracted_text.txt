@@ -1,0 +1,169 @@
+Case Study 1
+ReliefPlan AI
+AI-Powered Disaster Relief Camp Planning Using Satellite Imagery and Deep Reinforcement Learning
+Course: 23CSE473 – Neural Networks and Deep Learning
+Faculty: S. Jenita Bagyammal
+Team No: 2
+
+1. Introduction
+Natural disasters such as earthquakes, floods, cyclones, and armed conflicts often displace large numbers of people, requiring the rapid setup of temporary relief camps. Manual planning under such time pressure often leads to overcrowding, poor accessibility, and inefficient use of resources. ReliefPlan AI addresses this by automatically generating an optimized camp layout from satellite or drone imagery, combining terrain segmentation with a constraint-based layout optimization engine that positions tent blocks, roads, medical centers, water points, sanitation facilities, and emergency exits in line with established humanitarian planning standards such as those published by UNHCR.
+2. Problem Statement
+Emergency relief camps are currently designed manually by humanitarian planners working under severe time constraints, typically using GIS tools and printed planning handbooks. This manual process can result in inefficient use of available land, long walking distances to essential services, congestion in high-traffic areas, and inadequate emergency accessibility for vehicles and personnel.
+This project proposes an AI-driven planning system capable of automatically generating optimized disaster relief camp layouts from satellite imagery using deep learning techniques, reducing planning time while improving safety and accessibility outcomes for displaced populations.
+3. Motivation
+ReliefPlan AI aims to assist disaster management agencies and humanitarian organizations by significantly reducing the time required to design emergency camps, while simultaneously improving accessibility, safety, and the allocation of critical resources such as water, sanitation, and medical care.
+The project demonstrates how deep learning can move beyond traditional image classification tasks to automate humanitarian infrastructure planning, helping authorities respond faster and more effectively during emergencies, when every day of delay directly affects the health and safety of displaced people.
+4. Research Questions & Research Gaps
+Research Questions
+Can satellite imagery be automatically analyzed to identify terrain suitable for camp construction?
+Can Deep Reinforcement Learning generate efficient camp layouts without manually programmed design rules?
+How effectively can AI optimize accessibility, safety, and resource placement within a camp layout?
+Can AI-generated layouts reduce planning time compared to traditional manual methods?
+Can a single trained agent generalize to disaster sites of different shapes, sizes, and terrain types without retraining?
+Research Gaps
+Existing disaster camp planning is largely manual and dependent on expert judgment and printed handbooks.
+Few AI systems exist that automatically generate complete humanitarian camp layouts end to end.
+Limited research combines satellite image understanding with automated camp layout generation.
+No widely available integrated solution exists that connects terrain analysis directly with automated blueprint generation.
+Reinforcement learning has been applied to industrial facility layout problems, but rarely to humanitarian settlement planning, which has different constraints such as dignity, safety, and equitable access.
+5. Literature Review / Related Academic Work
+The Facility Layout Problem (FLP), which involves arranging a set of elements within a bounded area to optimize criteria such as travel distance and space utilization, is a well-studied combinatorial optimization problem in industrial and production engineering. Traditional approaches rely on systematic layout planning and mathematical optimization, which tend to be slow and difficult to adapt to new scenarios.
+Recent research has applied Deep Reinforcement Learning to this problem. Studies using Proximal Policy Optimization (PPO), Advantage Actor-Critic (A2C), and Deep Q-Networks have shown that DRL agents can produce competitive facility arrangements and, in some cases, generalize across differently shaped layout problems without retraining, using image-based state representations. Open-source benchmarking environments such as gym-flp have been developed to standardize this line of research within the OpenAI Gym framework.
+Separately, humanitarian organizations such as UNHCR have developed detailed settlement planning standards covering shelter spacing, sanitation ratios, and service coverage, based on decades of field experience. However, these standards are typically applied manually by planners rather than being encoded as machine-readable constraints. ReliefPlan AI bridges these two bodies of work: it treats humanitarian camp design as a layout optimization problem, similar in structure to industrial FLP research, while using UNHCR-style planning standards as the reward and penalty structure for a DRL agent operating directly on real satellite terrain data.
+6. Related Products / Existing Systems
+
+7. SDG Mapping
+Relevant SDGs
+SDG 3 – Good Health and Well-being
+SDG 6 – Clean Water and Sanitation
+SDG 11 – Sustainable Cities and Communities
+SDG 16 – Peace, Justice and Strong Institutions
+Relation to SDGs
+By enabling faster deployment of disaster relief camps, ReliefPlan AI improves access to healthcare, sanitation, and clean water for displaced populations, supports the creation of safer and more organized settlements, and strengthens the ability of institutions to respond effectively during humanitarian emergencies.
+8. Proposed System Architecture
+The system is organized into a five-stage pipeline:
+Image Acquisition – accepts uploaded satellite or drone imagery of the disaster-affected site.
+Terrain Segmentation – a convolutional segmentation network classifies each region of the image into categories such as open land, water body, vegetation, road, and existing structure.
+Terrain Analysis – the segmented map is processed to identify the buildable area, compute its size, and flag unsuitable zones (water bodies, steep or unstable terrain, existing structures).
+Constraint-based Layout Optimization Engine – an algorithm places tent blocks, roads, and essential facilities on the buildable area so as to satisfy humanitarian planning standards (see Section 9.2).
+Blueprint Renderer – overlays the final generated layout on the original satellite image and exports it as a shareable camp blueprint.
+Pipeline: Image Acquisition → Terrain Segmentation → Terrain Analysis → Constraint-based Layout Optimization Engine → Blueprint Renderer.
+
+Figure 1. High-level architecture of ReliefPlan AI, showing the five-stage pipeline, the datasets that train the segmentation module, and the UNHCR standards that constrain the optimization engine.
+Justification / Need for Each Module
+Each stage of the pipeline exists to solve a specific limitation of manual camp planning; removing any one module would leave a gap that the remaining modules cannot cover.
+
+User Inputs
+Satellite or drone image of the disaster-affected site
+Estimated population to be housed
+Camp type (optional — e.g., short-term transit camp vs. longer-term settlement)
+Humanitarian planning standards to apply (default: UNHCR)
+User Workflow
+User uploads a satellite image
+Terrain segmentation is performed
+Buildable area is detected
+Camp layout optimization is run
+Blueprint is generated
+Blueprint is overlaid on the original image
+User downloads the final camp layout
+Expected Outputs
+Segmented terrain map
+Buildable area mask
+Camp layout blueprint
+Final satellite image with the layout overlaid
+Summary statistics: land utilization, facility counts, and average walking distance
+9. Methodology
+9.1 Terrain Segmentation
+Semantic segmentation of the input imagery will be performed using an encoder-decoder convolutional architecture such as U-Net or DeepLabV3+, both of which are widely used for satellite and aerial image segmentation. The output is a per-pixel classification map distinguishing buildable land from water bodies, dense vegetation, existing roads, and structures.
+9.2 Camp Layout Optimization
+This is the core of the proposed system. Once the buildable area has been identified, the optimization engine positions shelters, roads, and essential facilities so as to satisfy a set of humanitarian planning objectives simultaneously. The engine considers:
+Buildable land only — tents and facilities are never placed on water bodies, unstable terrain, or existing structures
+Shelter spacing — minimum distance maintained between shelters
+Road connectivity — every shelter block must be reachable via the internal road network
+Walking distance — shelters are placed to minimize distance to essential services
+Water accessibility — shelters kept within standards-compliant distance of water points
+Toilet accessibility — shelters kept within standards-compliant distance of sanitation facilities
+Medical center accessibility — reasonable coverage of health facilities across the camp
+Population capacity — the total number of people the buildable area can safely accommodate
+9.3 Optimization Methodology
+In the proposed implementation, the camp layout is generated using a constraint-based optimization algorithm that places shelters, roads, and essential facilities while satisfying the humanitarian planning standards listed above and in Section 9.4. This approach is directly implementable and testable within the scope of this course project.
+In future work, this optimization engine can be replaced with a Deep Reinforcement Learning agent (e.g., trained with Proximal Policy Optimization) that learns optimal placement strategies through repeated simulation, rather than following a fixed optimization procedure. Section 14 elaborates on this extension.
+9.4 Humanitarian Design Standards Encoded as Constraints
+The optimization engine's scoring criteria are grounded in widely used UNHCR emergency settlement planning benchmarks, including:
+Approximately 45 m² of total accessible camp area per person, of which around 30 m² is reserved for roads, footpaths, sanitation, firebreaks, and communal facilities.
+A minimum of 3.5 m² of covered shelter area per person, with shelters spaced at least 2 m apart.
+Approximately one shared latrine per 20 people and one shower per 50 people, located no more than 50 m from shelters.
+Approximately one water tap stand per 80 people, located within 200 m of shelters.
+Roughly one health center per 20,000 people and one food distribution point per 5,000 people.
+These figures are used as configurable parameters in the simulation environment rather than fixed constants, so the model can be adapted to different guideline versions or local requirements.
+10. Dataset Details
+Terrain Dataset
+Publicly available satellite imagery datasets will be used to train and fine-tune the terrain segmentation model, including:
+SpaceNet – building footprint and road network extraction from satellite imagery  [dataset link]
+LoveDA – land-cover domain-adaptive semantic segmentation dataset covering urban and rural scenes  [dataset link]
+xView – large-scale overhead imagery dataset for object detection  [dataset link]
+Sentinel-2 – multispectral satellite imagery from the European Space Agency's Copernicus program  [dataset link]
+OpenStreetMap (OSM) – used to obtain existing roads, buildings, and other geographic features that complement satellite imagery and improve terrain understanding  [dataset link]
+These datasets provide terrain information such as roads, buildings, water bodies, vegetation, and open land, which the segmentation model uses to identify areas suitable for camp construction.
+Dataset Description Summary
+The table below summarizes the quantitative characteristics of each publicly available dataset used to train and validate the terrain segmentation model, including approximate image counts, image type/resolution, and coverage/size.
+Note: SpaceNet, xView, and Sentinel-2 figures reflect the publicly documented totals for the full released dataset/archive; a task-specific subset will be sampled for training and fine-tuning the segmentation model within the scope of this project.
+Layout Optimization Criteria
+The optimization engine does not require manually labeled camp layouts. Instead, it scores candidate layouts against the objectives and constraints described in Section 9.2 and Section 9.4. Example positive criteria include:
+Short walking distance between tents and essential services
+Good road connectivity throughout the camp
+Proximity to medical facilities
+Standards-compliant placement of toilets and sanitation points
+Balanced camp density
+Example constraint violations to avoid include:
+Tent overlap
+Construction on water bodies or unsafe terrain
+Excessive travel distances to key facilities
+Congestion in high-traffic zones
+Unsafe or inaccessible layouts
+As noted in Section 9.3, these same criteria are designed so that they can later serve as the reward and penalty structure for a Deep Reinforcement Learning agent, once that extension is undertaken.
+11. Evaluation Metrics
+The generated layouts will be evaluated using a combination of quantitative planning metrics and comparisons against manually designed layouts:
+Average walking distance from shelters to water points, latrines, and medical facilities
+Road connectivity index, measuring how well tent blocks are connected to the main road network
+Standards-compliance rate, measuring adherence to spacing and ratio guidelines such as those in Section 9.4
+Land utilization efficiency, comparing usable area to total buildable area
+Planning time comparison between AI-generated layouts and estimated manual planning time for the same site
+12. Tools & Technology Stack
+Python as the primary development language
+PyTorch for building and training the terrain segmentation model
+A constraint-based optimization library (e.g., SciPy optimization routines or a custom heuristic solver) for the layout optimization engine; Stable-Baselines3 is earmarked for the future PPO-based extension
+OpenCV and Rasterio for image and geospatial data preprocessing
+QGIS for terrain visualization and manual validation of segmentation outputs
+A lightweight web interface (e.g., Flask or a simple React front end) for uploading imagery and viewing the generated blueprint
+13. Novelty
+Unlike existing disaster mapping systems that only analyze terrain, ReliefPlan AI automatically designs a complete disaster relief camp layout. Key innovations include:
+Satellite image understanding using deep learning-based semantic segmentation
+An AI-generated camp blueprint overlaid directly on the uploaded satellite image
+A constraint-based layout optimization engine for autonomous camp layout generation, deliberately designed so it can later be replaced by a Deep Reinforcement Learning agent
+Encoding real humanitarian planning standards (UNHCR-style spacing and service ratios) directly into the optimization engine's scoring criteria, rather than relying on generic optimization objectives
+A focus on humanitarian infrastructure optimization rather than simple image classification
+14. Scope for Future Work
+Replace the constraint-based optimization engine with a Deep Reinforcement Learning agent (e.g., trained with Proximal Policy Optimization) capable of learning optimal camp layouts through repeated simulation, rather than a fixed optimization procedure
+3D visualization of the generated camp layout
+Multi-drone terrain mapping for larger disaster zones
+Integration of live disaster and population displacement data
+Population growth prediction for dynamic camp planning
+Dynamic camp expansion as displaced populations grow
+IoT-based monitoring of camp resources such as water and food supplies
+Traffic and pedestrian flow simulation inside the camp
+A mobile application for on-ground disaster response teams
+15. Team Roles & Responsibilities
+
+16. Conclusion
+ReliefPlan AI demonstrates how deep learning can move beyond image classification to solve complex spatial planning problems. By combining satellite image segmentation with Deep Reinforcement Learning grounded in real humanitarian planning standards, the proposed system automatically generates optimized disaster relief camp layouts directly over satellite imagery. The solution has the potential to assist humanitarian organizations in establishing safer and more efficient camps, while supporting multiple United Nations Sustainable Development Goals, including SDG 3, SDG 6, SDG 11, and SDG 16.
+17. References
+UNHCR Emergency Handbook – Camp Planning Standards (Planned Settlements)
+UNHCR – Principles & Standards for Settlement Planning
+SpaceNet dataset – satellite imagery for building and road extraction  [dataset link]
+LoveDA dataset – land-cover domain-adaptive semantic segmentation  [dataset link]
+xView dataset – overhead imagery object detection  [dataset link]
+Sentinel-2 – European Space Agency Copernicus program  [dataset link]
+gym-flp – open-source OpenAI Gym environment for facility layout problems using reinforcement learning
+Journal of Computational Design and Engineering – Optimization of facility layout using reinforcement learning (2026)
+Production Engineering (Springer) – Investigating the generalizability of facility layout problems using deep reinforcement learning (2025)
