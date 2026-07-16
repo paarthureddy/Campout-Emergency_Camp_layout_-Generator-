@@ -38,7 +38,7 @@ function Dashboard({ status, results }) {
             <MetricsCard 
               title="Land Utilization" 
               value={`${results.land_utilization_percent}%`} 
-              accent="var(--primary-glow)" 
+              accent="var(--primary)" 
             />
             <MetricsCard 
               title="Total Shelters" 
@@ -53,7 +53,7 @@ function Dashboard({ status, results }) {
             <MetricsCard 
               title="Essential Facilities" 
               value={`${results.facilities.medical_centers} Med, ${results.facilities.water_points} Water`} 
-              accent="#f59e0b" 
+              accent="var(--text-main)" 
             />
           </>
         )}
