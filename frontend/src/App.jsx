@@ -32,8 +32,11 @@ function App() {
 
   return (
     <div className="app-container">
-      <header className="glass-panel">
-        <h1>ReliefPlan AI</h1>
+      <header>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <img src="/camp-logo.png" alt="ReliefPlan AI Logo" style={{ width: '40px', height: '40px', borderRadius: '8px' }} />
+          <h1>ReliefPlan AI</h1>
+        </div>
         <p className="glow-text">Disaster Camp Layout Optimization</p>
       </header>
 
