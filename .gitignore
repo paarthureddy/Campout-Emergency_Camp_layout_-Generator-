@@ -7,3 +7,5 @@ dist/
 build/
 backend/venv/
 backend/env/
+*.zip
+*.crdownload
