@@ -1,0 +1,16 @@
+[
+    {
+        "Model": "U-Net (Baseline)",
+        "Parameters": 31038023,
+        "Inference Time (ms)": 936.58,
+        "Simulated Mean IoU (%)": 74.2,
+        "Simulated Accuracy (%)": 88.5
+    },
+    {
+        "Model": "DeepLabV3+ (Proposed)",
+        "Parameters": 3935783,
+        "Inference Time (ms)": 394.58,
+        "Simulated Mean IoU (%)": 78.6,
+        "Simulated Accuracy (%)": 91.3
+    }
+]
