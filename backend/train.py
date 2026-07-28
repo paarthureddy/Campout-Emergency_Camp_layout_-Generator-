@@ -34,8 +34,8 @@ def train():
 
     print("Loading datasets directly from ZIP files...")
     # Transformations will be added in Phase 2
-    train_dataset = ZipImageDataset(train_zip_path)
-    val_dataset = ZipImageDataset(val_zip_path)
+    train_dataset = ZipImageDataset(train_zip_path, transform=True)
+    val_dataset = ZipImageDataset(val_zip_path, transform=False)
 
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=0)
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=0)

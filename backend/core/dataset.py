@@ -5,6 +5,7 @@ from PIL import Image
 import io
 import numpy as np
 import os
+import torchvision.transforms as transforms
 
 class ZipImageDataset(Dataset):
     """
@@ -44,14 +45,45 @@ class ZipImageDataset(Dataset):
         img = np.array(img)
         mask = np.array(mask)
         
-        # Apply torchvision transforms if any
+        # Apply joint data augmentation if requested (Phase 2)
         if self.transform:
-            augmented = self.transform(image=img, mask=mask)
-            img = augmented['image']
-            mask = augmented['mask']
-        else:
-            # Basic fallback conversion if no transforms provided
-            img = torch.from_numpy(img).permute(2, 0, 1).float() / 255.0
-            mask = torch.from_numpy(mask).long()
+            # For simplicity, if transform is True, apply random crop and flip
+            import torchvision.transforms.functional as TF
+            import random
             
-        return img, mask
+            # Convert to PIL Image for torchvision transforms
+            img = Image.fromarray(img)
+            mask = Image.fromarray(mask)
+            
+            # Random horizontal flipping
+            if random.random() > 0.5:
+                img = TF.hflip(img)
+                mask = TF.hflip(mask)
+                
+            # Random vertical flipping
+            if random.random() > 0.5:
+                img = TF.vflip(img)
+                mask = TF.vflip(mask)
+                
+            # Random Crop (e.g., 256x256 if images are larger)
+            # Assuming we want to crop to a standard size
+            w, h = img.size
+            if w > 256 and h > 256:
+                i, j, h, w = transforms.RandomCrop.get_params(img, output_size=(256, 256))
+                img = TF.crop(img, i, j, h, w)
+                mask = TF.crop(mask, i, j, h, w)
+                
+            # Color jitter for the image only
+            if random.random() > 0.5:
+                img = TF.adjust_brightness(img, brightness_factor=random.uniform(0.8, 1.2))
+                img = TF.adjust_contrast(img, contrast_factor=random.uniform(0.8, 1.2))
+                
+            # Convert back to numpy for final tensor conversion
+            img = np.array(img)
+            mask = np.array(mask)
+
+        # Convert to Tensors
+        img_tensor = torch.from_numpy(img).permute(2, 0, 1).float() / 255.0
+        mask_tensor = torch.from_numpy(mask).long()
+            
+        return img_tensor, mask_tensor
