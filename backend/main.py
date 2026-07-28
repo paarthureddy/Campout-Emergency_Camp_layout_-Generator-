@@ -1,8 +1,17 @@
+import os
+import cv2
+import numpy as np
 from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 import uuid
-import time
+
+# Import pipeline modules
+from pipeline.segmentation import segment_terrain
+from pipeline.analysis import analyze_terrain
+from pipeline.optimization import generate_layout
+from pipeline.renderer import render_blueprint
 
 app = FastAPI(title="ReliefPlan AI Backend", description="API for automated disaster relief camp planning.")
 
@@ -14,20 +23,47 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Serve static directory for returning generated blueprints
+STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
+if not os.path.exists(STATIC_DIR):
+    os.makedirs(STATIC_DIR)
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
 @app.get("/")
 def read_root():
     return {"message": "Welcome to the ReliefPlan AI API"}
 
 @app.post("/api/upload")
 async def upload_image(file: UploadFile = File(...)):
-    # Mock behavior for image upload and processing
     job_id = str(uuid.uuid4())
-    # In a real scenario, this would save the image and trigger the ML pipeline asynchronously
     
-    return JSONResponse(status_code=202, content={
-        "message": "Image uploaded successfully, processing started.",
+    # Read image from request
+    contents = await file.read()
+    nparr = np.frombuffer(contents, np.uint8)
+    original_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+    
+    # 1. Segmentation
+    segmented_mask = segment_terrain(original_image)
+    
+    # 2. Analysis
+    terrain_analysis = analyze_terrain(segmented_mask)
+    
+    # 3. Optimization
+    layout = generate_layout(terrain_analysis)
+    
+    # 4. Renderer
+    blueprint = render_blueprint(original_image, layout)
+    
+    # Save blueprint to static directory
+    blueprint_filename = f"{job_id}.png"
+    blueprint_path = os.path.join(STATIC_DIR, blueprint_filename)
+    cv2.imwrite(blueprint_path, blueprint)
+    
+    return JSONResponse(status_code=200, content={
+        "message": "Pipeline completed successfully.",
         "job_id": job_id,
-        "filename": file.filename
+        "blueprint_url": f"http://localhost:8000/static/{blueprint_filename}",
+        "results": layout["metrics"]
     })
 
 @app.get("/api/status/{job_id}")
