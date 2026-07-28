@@ -17,7 +17,7 @@ function Dashboard({ status, results }) {
         ) : (
           <>
             <img 
-              src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop" 
+              src={results?.blueprint_url || "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop"} 
               alt="Satellite Blueprint" 
               className="blueprint-img"
             />
@@ -37,22 +37,22 @@ function Dashboard({ status, results }) {
           <>
             <MetricsCard 
               title="Land Utilization" 
-              value={`${results.land_utilization_percent}%`} 
+              value={`${results.metrics.land_utilization_percent}%`} 
               accent="var(--primary)" 
             />
             <MetricsCard 
               title="Total Shelters" 
-              value={results.total_shelters} 
+              value={results.metrics.total_shelters} 
               accent="var(--accent)" 
             />
             <MetricsCard 
               title="Avg Walking Distance" 
-              value={`${results.avg_walking_distance_m}m`} 
+              value={`${results.metrics.avg_walking_distance_m}m`} 
               accent="var(--danger)" 
             />
             <MetricsCard 
               title="Essential Facilities" 
-              value={`${results.facilities.medical_centers} Med, ${results.facilities.water_points} Water`} 
+              value={`${results.metrics.facilities.medical_centers} Med, ${results.metrics.facilities.water_points} Water`} 
               accent="var(--text-main)" 
             />
           </>
