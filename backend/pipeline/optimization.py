@@ -31,19 +31,19 @@ def generate_layout(terrain_analysis):
                     layout_grid[y, x] = 2
     
     # Place Facilities and Shelters in blocks
-    for y in range(0, h, block_size):
-        for x in range(0, w, block_size):
+    for y in range(0, h - block_size, block_size):
+        for x in range(0, w - block_size, block_size):
             block = buildable_mask[y:y+block_size, x:x+block_size]
             layout_block = layout_grid[y:y+block_size, x:x+block_size]
             
             # If the block is completely buildable and not a road
-            if np.mean(block) > 0.8 and np.all(layout_block != 2):
+            if np.mean(block) > 0.6 and np.all(layout_block != 2):
                 # Place Medical Center (roughly center)
-                if medical_centers < 1 and abs(y - center_y) < 50 and abs(x - center_x) < 50:
+                if medical_centers < 2 and abs(y - center_y) < 60 and abs(x - center_x) < 60:
                     layout_grid[y:y+block_size, x:x+block_size] = 4
                     medical_centers += 1
                 # Place Water points (regular intervals)
-                elif (y // block_size) % 5 == 0 and (x // block_size) % 5 == 0:
+                elif (y // block_size) % 8 == 0 and (x // block_size) % 8 == 0:
                     layout_grid[y:y+block_size, x:x+block_size] = 3
                     water_points += 1
                 # Otherwise Place Shelter
@@ -57,18 +57,25 @@ def generate_layout(terrain_analysis):
     total_placed_area = (shelters_placed + water_points + medical_centers) * (block_size**2)
     buildable_area = terrain_analysis["buildable_area_pixels"]
     
-    land_utilization = (total_placed_area / buildable_area * 100) if buildable_area > 0 else 0
+    # Prevent divide by zero
+    if buildable_area == 0:
+        buildable_area = 1
+        
+    land_utilization = (total_placed_area / buildable_area * 100)
+    
+    # Dynamic mock calculation for walking distance based on density
+    avg_walking_distance = 25 + (land_utilization * 0.5)
     
     return {
         "layout_grid": layout_grid,
         "metrics": {
-            "land_utilization_percent": round(land_utilization, 2),
+            "land_utilization_percent": round(min(land_utilization, 100), 2),
             "total_shelters": total_shelters,
-            "avg_walking_distance_m": 35, # Mock heuristic calculation
+            "avg_walking_distance_m": round(avg_walking_distance, 1), 
             "facilities": {
                 "medical_centers": medical_centers,
                 "water_points": water_points,
-                "latrines": total_shelters // 20  # 1 latrine per 20 people (assume 1 person per shelter for simplicity)
+                "latrines": max(1, total_shelters // 20)  # 1 latrine per 20 people
             }
         }
     }

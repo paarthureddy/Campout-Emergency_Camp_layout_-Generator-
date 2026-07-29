@@ -84,7 +84,7 @@ async def upload_image(file: UploadFile = File(...), model: str = Form("unet")):
     layout = generate_layout(terrain_analysis)
     
     # 4. Renderer
-    blueprint = render_blueprint(original_image, layout)
+    blueprint = render_blueprint(original_image, layout, segmented_mask)
     
     # Save blueprint to static directory
     blueprint_filename = f"{job_id}.png"

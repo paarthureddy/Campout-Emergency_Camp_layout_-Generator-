@@ -55,5 +55,16 @@ def segment_terrain(image_array, model_name="unet"):
         # Fallback to random mock mask for demonstration if model isn't trained yet
         print(f"Warning: {model_path} not found. Using simulated segmentation mask.")
         h, w = image_array.shape[:2]
-        mock_mask = np.random.choice([0, 1, 2, 3, 4, 5, 6], size=(h, w), p=[0.05, 0.05, 0.05, 0.1, 0.35, 0.05, 0.35])
+        
+        # Generate a small low-res grid so we get contiguous, realistic blobs when upscaled
+        small_h, small_w = max(1, h // 32), max(1, w // 32)
+        # Probabilities adjusted to create more buildable land (classes 4 and 6)
+        small_mask = np.random.choice(
+            [0, 1, 2, 3, 4, 5, 6], 
+            size=(small_h, small_w), 
+            p=[0.05, 0.05, 0.10, 0.10, 0.35, 0.10, 0.25]
+        )
+        
+        # Upscale to original resolution using Nearest Neighbor to keep class IDs integers
+        mock_mask = cv2.resize(small_mask.astype(np.uint8), (w, h), interpolation=cv2.INTER_NEAREST)
         return mock_mask
