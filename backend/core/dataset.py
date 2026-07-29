@@ -85,5 +85,8 @@ class ZipImageDataset(Dataset):
         # Convert to Tensors
         img_tensor = torch.from_numpy(img).permute(2, 0, 1).float() / 255.0
         mask_tensor = torch.from_numpy(mask).long()
+        
+        # LoveDA masks are 1-indexed (1-7). Subtract 1 to make them 0-indexed (0-6) for CrossEntropyLoss
+        mask_tensor = mask_tensor - 1
             
         return img_tensor, mask_tensor
