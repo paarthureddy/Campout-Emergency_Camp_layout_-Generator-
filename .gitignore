@@ -12,3 +12,4 @@ backend/env/
 *.pth
 history_*.json
 learning_curves_*.png
+backend/data/
