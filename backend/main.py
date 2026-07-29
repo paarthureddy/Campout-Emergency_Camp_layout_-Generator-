@@ -29,6 +29,36 @@ if not os.path.exists(STATIC_DIR):
     os.makedirs(STATIC_DIR)
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
+# Mount data directory for developer dataset visualization
+DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "LoveDA")
+app.mount("/data", StaticFiles(directory=DATA_DIR), name="data")
+
+import subprocess
+
+@app.get("/api/dataset/images")
+def get_dataset_images():
+    train_images_dir = os.path.join(DATA_DIR, "Train_256", "images")
+    if not os.path.exists(train_images_dir):
+        return {"images": []}
+    files = sorted([f for f in os.listdir(train_images_dir) if f.endswith('.png')])
+    # Return max 50 images for performance
+    return {"images": files[:50]}
+
+@app.get("/api/models/compare")
+def get_model_comparison():
+    # Return paths to learning curve artifacts
+    return {
+        "unet": "http://localhost:8000/static/learning_curves_unet.png",
+        "deeplabv3": "http://localhost:8000/static/learning_curves_deeplabv3.png"
+    }
+
+@app.post("/api/train")
+def trigger_training(model: str = "unet"):
+    # Run in background via subprocess
+    cmd = f"python train.py --epochs 2 --model {model} --fast_demo"
+    subprocess.Popen(cmd, shell=True, cwd=os.path.dirname(os.path.abspath(__file__)))
+    return {"message": f"Training started for {model}", "status": "running"}
+
 @app.get("/")
 def read_root():
     return {"message": "Welcome to the ReliefPlan AI API"}
