@@ -9,3 +9,6 @@ backend/venv/
 backend/env/
 *.zip
 *.crdownload
+*.pth
+history_*.json
+learning_curves_*.png
