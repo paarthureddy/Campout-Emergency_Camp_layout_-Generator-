@@ -8,11 +8,12 @@ function Home() {
   const [jobStatus, setJobStatus] = useState(null); // null | 'uploading' | 'processing' | 'completed'
   const [results, setResults] = useState(null);
 
-  const handleUpload = async (file) => {
+  const handleUpload = async (file, modelName) => {
     setJobStatus('uploading');
     
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('model', modelName);
 
     try {
       setJobStatus('processing');

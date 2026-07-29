@@ -63,8 +63,10 @@ def trigger_training(model: str = "unet"):
 def read_root():
     return {"message": "Welcome to the ReliefPlan AI API"}
 
+from fastapi import FastAPI, UploadFile, File, Form
+
 @app.post("/api/upload")
-async def upload_image(file: UploadFile = File(...)):
+async def upload_image(file: UploadFile = File(...), model: str = Form("unet")):
     job_id = str(uuid.uuid4())
     
     # Read image from request
@@ -72,8 +74,8 @@ async def upload_image(file: UploadFile = File(...)):
     nparr = np.frombuffer(contents, np.uint8)
     original_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
     
-    # 1. Segmentation
-    segmented_mask = segment_terrain(original_image)
+    # 1. Segmentation (Now passing the chosen model)
+    segmented_mask = segment_terrain(original_image, model_name=model)
     
     # 2. Analysis
     terrain_analysis = analyze_terrain(segmented_mask)
@@ -90,7 +92,7 @@ async def upload_image(file: UploadFile = File(...)):
     cv2.imwrite(blueprint_path, blueprint)
     
     return JSONResponse(status_code=200, content={
-        "message": "Pipeline completed successfully.",
+        "message": f"Pipeline completed using {model} model.",
         "job_id": job_id,
         "blueprint_url": f"http://localhost:8000/static/{blueprint_filename}",
         "results": layout["metrics"]
