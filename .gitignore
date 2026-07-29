@@ -13,3 +13,4 @@ backend/env/
 history_*.json
 learning_curves_*.png
 backend/data/
+documents/
