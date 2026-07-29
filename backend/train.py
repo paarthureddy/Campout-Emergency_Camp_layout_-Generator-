@@ -16,6 +16,7 @@ def train():
     parser.add_argument('--epochs', type=int, default=10, help="Number of training epochs")
     parser.add_argument('--lr', type=float, default=1e-4, help="Learning rate")
     parser.add_argument('--batch_size', type=int, default=4, help="Batch size")
+    parser.add_argument('--fast_demo', action='store_true', help="Run only 5 batches per epoch for quick demonstration")
     args = parser.parse_args()
 
     # Setup device
@@ -49,7 +50,7 @@ def train():
         model = DeepLabV3Plus(n_channels=3, n_classes=num_classes).to(device)
     
     # Loss and Optimizer
-    criterion = nn.CrossEntropyLoss()
+    criterion = nn.CrossEntropyLoss(ignore_index=-1)
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
 
     history = {
@@ -77,10 +78,15 @@ def train():
             
             running_loss += loss.item()
             
-            if (i + 1) % 10 == 0:
+            if (i + 1) % 10 == 0 or (args.fast_demo and i > 0):
                 print(f"Epoch [{epoch+1}/{args.epochs}], Step [{i+1}/{len(train_loader)}], Loss: {loss.item():.4f}")
+            if args.fast_demo and i >= 4:
+                break
 
-        epoch_loss = running_loss / len(train_loader)
+        # In fast_demo, len(train_loader) is too large for the actual steps taken, but epoch_loss is just an average of what ran.
+        # Actually, running_loss is correct, but we should divide by the steps taken.
+        steps_taken = i + 1
+        epoch_loss = running_loss / steps_taken
         history["train_loss"].append(epoch_loss)
         
         # Validation
@@ -90,7 +96,7 @@ def train():
         val_dices = []
         
         with torch.no_grad():
-            for images, masks in val_loader:
+            for i, (images, masks) in enumerate(val_loader):
                 images, masks = images.to(device), masks.to(device)
                 outputs = model(images)
                 loss = criterion(outputs, masks)
@@ -102,10 +108,14 @@ def train():
                 
                 val_ious.append(mean_iou)
                 val_dices.append(mean_dice)
+                
+                if args.fast_demo and i >= 4:
+                    break
         
-        avg_val_loss = val_loss / len(val_loader)
-        avg_iou = sum(val_ious) / len(val_ious)
-        avg_dice = sum(val_dices) / len(val_dices)
+        val_steps = i + 1
+        avg_val_loss = val_loss / val_steps
+        avg_iou = sum(val_ious) / len(val_ious) if len(val_ious) > 0 else 0
+        avg_dice = sum(val_dices) / len(val_dices) if len(val_dices) > 0 else 0
         
         history["val_loss"].append(avg_val_loss)
         history["val_iou"].append(avg_iou)

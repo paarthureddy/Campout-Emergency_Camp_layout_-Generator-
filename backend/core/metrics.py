@@ -11,8 +11,8 @@ def calculate_iou(preds, labels, num_classes):
     preds = preds.view(-1)
     labels = labels.view(-1)
     
-    # Ignore index 255 if it exists in LoveDA (often used for ignore class)
-    valid_mask = labels != 255
+    # Ignore index -1 if it exists in LoveDA
+    valid_mask = labels != -1
     preds = preds[valid_mask]
     labels = labels[valid_mask]
 
@@ -40,7 +40,7 @@ def calculate_dice(preds, labels, num_classes):
     preds = preds.view(-1)
     labels = labels.view(-1)
     
-    valid_mask = labels != 255
+    valid_mask = labels != -1
     preds = preds[valid_mask]
     labels = labels[valid_mask]
 
