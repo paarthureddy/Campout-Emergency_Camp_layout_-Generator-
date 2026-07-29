@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
-from core.dataset import ZipImageDataset
+from core.dataset import FolderImageDataset
 from core.metrics import calculate_iou, calculate_dice
 from models.unet import UNet
 from models.deeplabv3 import DeepLabV3Plus
@@ -25,18 +25,17 @@ def train():
 
     num_classes = 7 
 
-    # Dataset Paths
-    train_zip_path = os.path.join("data", "LoveDA", "Train.zip")
-    val_zip_path = os.path.join("data", "LoveDA", "Val.zip")
+    # Dataset Paths (now using the offline preprocessed 256x256 folders)
+    train_dir_path = os.path.join("data", "LoveDA", "Train_256")
+    val_dir_path = os.path.join("data", "LoveDA", "Val_256")
     
-    if not os.path.exists(train_zip_path) or not os.path.exists(val_zip_path):
-        print("Error: Dataset zip files not found. Make sure Train.zip and Val.zip are in data/LoveDA/")
+    if not os.path.exists(train_dir_path) or not os.path.exists(val_dir_path):
+        print("Error: Offline dataset folders not found. Run preprocess_dataset.py first.")
         return
 
-    print("Loading datasets directly from ZIP files...")
-    # Transformations will be added in Phase 2
-    train_dataset = ZipImageDataset(train_zip_path, transform=True)
-    val_dataset = ZipImageDataset(val_zip_path, transform=False)
+    print("Loading datasets from offline preprocessed folders...")
+    train_dataset = FolderImageDataset(train_dir_path, transform=True)
+    val_dataset = FolderImageDataset(val_dir_path, transform=False)
 
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=0)
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=0)
