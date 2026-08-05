@@ -36,14 +36,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from config import STATIC_DIR, DATA_DIR
+
 # Serve static directory for returning generated blueprints
-STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
-if not os.path.exists(STATIC_DIR):
-    os.makedirs(STATIC_DIR)
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 # Mount data directory for developer dataset visualization
-DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "LoveDA")
 app.mount("/data", StaticFiles(directory=DATA_DIR), name="data")
 
 import subprocess
