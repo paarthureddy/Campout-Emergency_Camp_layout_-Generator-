@@ -1,6 +1,7 @@
 import os
 import cv2
 import numpy as np
+import logging
 from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -25,6 +26,9 @@ from pipeline.segmentation import segment_terrain
 from pipeline.analysis import analyze_terrain
 from pipeline.optimization import generate_layout
 from pipeline.renderer import render_blueprint
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+logger = logging.getLogger(__name__)
 
 app = FastAPI(title="ReliefPlan AI Backend", description="API for automated disaster relief camp planning.")
 
@@ -83,6 +87,7 @@ from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 @app.post("/api/upload", response_model=UploadResponse)
 async def upload_image(file: UploadFile = File(...), model: str = Form("unet")):
     job_id = str(uuid.uuid4())
+    logger.info(f"Started upload processing with model: {model}, Job ID: {job_id}")
     
     try:
         # Read image from request
@@ -116,6 +121,7 @@ async def upload_image(file: UploadFile = File(...), model: str = Form("unet")):
             "results": layout["metrics"]
         })
     except Exception as e:
+        logger.error(f"Image processing failed for Job ID: {job_id}. Error: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Image processing failed: {str(e)}")
 
 @app.get("/api/status/{job_id}", response_model=StatusResponse)
