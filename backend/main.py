@@ -6,6 +6,19 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 import uuid
+from pydantic import BaseModel
+from typing import Dict, Any, List
+
+class UploadResponse(BaseModel):
+    message: str
+    job_id: str
+    blueprint_url: str
+    results: Dict[str, Any]
+
+class StatusResponse(BaseModel):
+    job_id: str
+    status: str
+    results: Dict[str, Any]
 
 # Import pipeline modules
 from pipeline.segmentation import segment_terrain
@@ -65,7 +78,7 @@ def read_root():
 
 from fastapi import FastAPI, UploadFile, File, Form
 
-@app.post("/api/upload")
+@app.post("/api/upload", response_model=UploadResponse)
 async def upload_image(file: UploadFile = File(...), model: str = Form("unet")):
     job_id = str(uuid.uuid4())
     
@@ -98,7 +111,7 @@ async def upload_image(file: UploadFile = File(...), model: str = Form("unet")):
         "results": layout["metrics"]
     })
 
-@app.get("/api/status/{job_id}")
+@app.get("/api/status/{job_id}", response_model=StatusResponse)
 async def get_status(job_id: str):
     # Mock status endpoint
     # Simulating a pipeline that finishes immediately for demo purposes
