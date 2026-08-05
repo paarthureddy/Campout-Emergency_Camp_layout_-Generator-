@@ -1,11 +1,18 @@
 import torch
 import numpy as np
+from typing import Tuple, List
 
-def calculate_iou(preds, labels, num_classes):
+def calculate_iou(preds: torch.Tensor, labels: torch.Tensor, num_classes: int) -> Tuple[float, List[float]]:
     """
     Calculates the Intersection over Union (IoU) per class and Mean IoU.
-    preds: Tensor of shape (N, H, W)
-    labels: Tensor of shape (N, H, W)
+    
+    Args:
+        preds (torch.Tensor): Predictions tensor of shape (N, H, W)
+        labels (torch.Tensor): Ground truth labels tensor of shape (N, H, W)
+        num_classes (int): Number of semantic classes
+        
+    Returns:
+        Tuple[float, List[float]]: The mean IoU and the list of per-class IoU values.
     """
     ious = []
     preds = preds.view(-1)
@@ -32,9 +39,17 @@ def calculate_iou(preds, labels, num_classes):
     mean_iou = sum(valid_ious) / len(valid_ious) if len(valid_ious) > 0 else 0.0
     return mean_iou, ious
 
-def calculate_dice(preds, labels, num_classes):
+def calculate_dice(preds: torch.Tensor, labels: torch.Tensor, num_classes: int) -> float:
     """
     Calculates the Dice Coefficient.
+    
+    Args:
+        preds (torch.Tensor): Predictions tensor of shape (N, H, W)
+        labels (torch.Tensor): Ground truth labels tensor of shape (N, H, W)
+        num_classes (int): Number of semantic classes
+        
+    Returns:
+        float: The mean Dice coefficient across valid classes.
     """
     dices = []
     preds = preds.view(-1)
