@@ -74,6 +74,10 @@ def trigger_training(model: str = "unet"):
 def read_root():
     return {"message": "Welcome to the ReliefPlan AI API"}
 
+@app.get("/health")
+def health_check():
+    return {"status": "ok", "service": "ReliefPlan AI Backend"}
+
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 
 @app.post("/api/upload", response_model=UploadResponse)
