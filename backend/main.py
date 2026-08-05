@@ -74,40 +74,45 @@ def trigger_training(model: str = "unet"):
 def read_root():
     return {"message": "Welcome to the ReliefPlan AI API"}
 
-from fastapi import FastAPI, UploadFile, File, Form
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 
 @app.post("/api/upload", response_model=UploadResponse)
 async def upload_image(file: UploadFile = File(...), model: str = Form("unet")):
     job_id = str(uuid.uuid4())
     
-    # Read image from request
-    contents = await file.read()
-    nparr = np.frombuffer(contents, np.uint8)
-    original_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-    
-    # 1. Segmentation (Now passing the chosen model)
-    segmented_mask = segment_terrain(original_image, model_name=model)
-    
-    # 2. Analysis
-    terrain_analysis = analyze_terrain(segmented_mask)
-    
-    # 3. Optimization
-    layout = generate_layout(terrain_analysis)
-    
-    # 4. Renderer
-    blueprint = render_blueprint(original_image, layout, segmented_mask)
-    
-    # Save blueprint to static directory
-    blueprint_filename = f"{job_id}.png"
-    blueprint_path = os.path.join(STATIC_DIR, blueprint_filename)
-    cv2.imwrite(blueprint_path, blueprint)
-    
-    return JSONResponse(status_code=200, content={
-        "message": f"Pipeline completed using {model} model.",
-        "job_id": job_id,
-        "blueprint_url": f"http://localhost:8000/static/{blueprint_filename}",
-        "results": layout["metrics"]
-    })
+    try:
+        # Read image from request
+        contents = await file.read()
+        nparr = np.frombuffer(contents, np.uint8)
+        original_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        if original_image is None:
+            raise ValueError("Invalid image format.")
+        
+        # 1. Segmentation (Now passing the chosen model)
+        segmented_mask = segment_terrain(original_image, model_name=model)
+        
+        # 2. Analysis
+        terrain_analysis = analyze_terrain(segmented_mask)
+        
+        # 3. Optimization
+        layout = generate_layout(terrain_analysis)
+        
+        # 4. Renderer
+        blueprint = render_blueprint(original_image, layout, segmented_mask)
+        
+        # Save blueprint to static directory
+        blueprint_filename = f"{job_id}.png"
+        blueprint_path = os.path.join(STATIC_DIR, blueprint_filename)
+        cv2.imwrite(blueprint_path, blueprint)
+        
+        return JSONResponse(status_code=200, content={
+            "message": f"Pipeline completed using {model} model.",
+            "job_id": job_id,
+            "blueprint_url": f"http://localhost:8000/static/{blueprint_filename}",
+            "results": layout["metrics"]
+        })
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Image processing failed: {str(e)}")
 
 @app.get("/api/status/{job_id}", response_model=StatusResponse)
 async def get_status(job_id: str):
