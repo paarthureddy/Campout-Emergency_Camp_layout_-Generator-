@@ -15,19 +15,23 @@ def create_semantic_overlay(original_image, segmented_mask):
 
 def create_layout_overlay(base_image, layout_grid):
     layout_overlay = base_image.copy()
+    # Use bright, highly visible BGR colors for the camp layout
     layout_colors = {
-        1: (128, 0, 0), 2: (50, 50, 50), 3: (255, 255, 0), 4: (0, 0, 128)
+        1: (0, 165, 255),    # Tents: Bright Orange
+        2: (255, 255, 255),  # Roads: White
+        3: (0, 0, 255),      # Medical: Bright Red
+        4: (255, 255, 0)     # Water Points: Cyan
     }
     for class_id, color in layout_colors.items():
         mask = (layout_grid == class_id)
         layout_overlay[mask] = color
-    layout_alpha = 0.8
+    layout_alpha = 0.85
     return cv2.addWeighted(layout_overlay, layout_alpha, base_image, 1 - layout_alpha, 0)
 
 def render_blueprint(original_image, layout, segmented_mask):
     """
     Blueprint Renderer Module.
-    Overlays the semantic segmentation mask and the generated layout grid.
+    Overlays the generated rehabilitation layout strictly on top of the original uploaded image.
     Input: original_image (BGR), layout (dict), segmented_mask (numpy array)
     Output: Rendered image (BGR NumPy array).
     """
@@ -37,10 +41,11 @@ def render_blueprint(original_image, layout, segmented_mask):
     if original_image.shape[:2] != (h, w):
         original_image = cv2.resize(original_image, (w, h))
         
-    if segmented_mask.shape[:2] != (h, w):
-        segmented_mask = cv2.resize(segmented_mask, (w, h), interpolation=cv2.INTER_NEAREST)
-
-    base_image = create_semantic_overlay(original_image, segmented_mask)
+    # We deliberately DO NOT overlay the semantic segmentation mask anymore, 
+    # so the user sees the original pristine satellite image as the base.
+    base_image = original_image.copy()
+    
+    # Draw the rehabilitation camp layout on top of the base image
     rendered_image = create_layout_overlay(base_image, layout_grid)
     
     return rendered_image
