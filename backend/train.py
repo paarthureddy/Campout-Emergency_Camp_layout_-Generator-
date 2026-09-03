@@ -17,6 +17,10 @@ def train():
     parser.add_argument('--lr', type=float, default=1e-4, help="Learning rate")
     parser.add_argument('--batch_size', type=int, default=4, help="Batch size")
     parser.add_argument('--fast_demo', action='store_true', help="Run only 5 batches per epoch for quick demonstration")
+    
+    # Regularization Parameters added for Faculty Review
+    parser.add_argument('--l1_lambda', type=float, default=1e-5, help="L1 Regularization strength (Sparsity)")
+    parser.add_argument('--l2_lambda', type=float, default=1e-4, help="L2 Regularization strength (Weight Decay)")
     args = parser.parse_args()
 
     # Setup device
@@ -50,7 +54,11 @@ def train():
     
     # Loss and Optimizer
     criterion = nn.CrossEntropyLoss(ignore_index=-1)
-    optimizer = optim.Adam(model.parameters(), lr=args.lr)
+    
+    # [Faculty Review] L2 Regularization implementation
+    # In PyTorch, L2 Regularization is typically implemented via the 'weight_decay' parameter 
+    # in the optimizer, which adds L2 penalty directly to the cost function.
+    optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.l2_lambda)
 
     history = {
         "train_loss": [],
@@ -72,6 +80,14 @@ def train():
             optimizer.zero_grad()
             outputs = model(images)
             loss = criterion(outputs, masks)
+            
+            # [Faculty Review] L1 Regularization implementation
+            # L1 penalty is calculated manually by taking the sum of the absolute values of all model weights.
+            # This encourages sparsity in the model (forces less important weights to zero).
+            if args.l1_lambda > 0:
+                l1_penalty = sum(p.abs().sum() for p in model.parameters())
+                loss = loss + args.l1_lambda * l1_penalty
+                
             loss.backward()
             optimizer.step()
             

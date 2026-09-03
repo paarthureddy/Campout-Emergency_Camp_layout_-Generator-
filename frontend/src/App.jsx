@@ -63,8 +63,8 @@ function App() {
             <p className="glow-text" style={{ margin: 0 }}>Disaster Camp Layout Optimization</p>
           </div>
           <nav style={{ display: 'flex', gap: '1.5rem' }}>
-            <Link to="/" style={{ color: 'white', textDecoration: 'none', fontWeight: 'bold' }}>Dashboard</Link>
-            <Link to="/developers" style={{ color: '#00d2ff', textDecoration: 'none', fontWeight: 'bold' }}>Developers</Link>
+            <Link to="/" style={{ color: 'var(--text-main)', textDecoration: 'none', fontWeight: '600' }}>Dashboard</Link>
+            <Link to="/developers" style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: '600' }}>Developers</Link>
           </nav>
         </header>
 

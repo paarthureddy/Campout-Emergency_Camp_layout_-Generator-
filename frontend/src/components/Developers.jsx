@@ -40,12 +40,12 @@ function Developers() {
         <h3>1. Deep Learning Model Training</h3>
         <p>Trigger GPU-accelerated training directly from the UI.</p>
         <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-          <button className="primary-btn" onClick={() => startTraining('unet')}>Train U-Net (Ablation)</button>
-          <button className="primary-btn" onClick={() => startTraining('deeplabv3')}>Train DeepLabV3+ (Ablation)</button>
+          <button className="btn-primary" onClick={() => startTraining('unet')}>Train U-Net (Ablation)</button>
+          <button className="btn-primary" onClick={() => startTraining('deeplabv3')}>Train DeepLabV3+ (Ablation)</button>
         </div>
         {trainingStatus && (
-          <div style={{ marginTop: '1rem', padding: '1rem', backgroundColor: 'rgba(0,255,0,0.1)', borderRadius: '8px' }}>
-            <p className="glow-text">{trainingStatus}</p>
+          <div style={{ marginTop: '1rem', padding: '1rem', backgroundColor: 'rgba(16, 185, 129, 0.1)', borderRadius: '8px', border: '1px solid var(--success)' }}>
+            <p style={{ color: 'var(--success)', fontWeight: '500', margin: 0 }}>{trainingStatus}</p>
           </div>
         )}
       </section>
@@ -73,18 +73,18 @@ function Developers() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem', marginTop: '1rem' }}>
           {images.map(filename => (
             <div key={filename} style={{ textAlign: 'center' }}>
-              <p style={{ fontSize: '0.8rem', color: '#ccc' }}>{filename}</p>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>{filename}</p>
               <div style={{ display: 'flex', gap: '0.5rem' }}>
                 <img 
                   src={`http://localhost:8000/data/Train_256/images/${filename}`} 
                   alt="Raw" 
-                  style={{ width: '50%', borderRadius: '4px', border: '1px solid #444' }} 
+                  style={{ width: '50%', borderRadius: '6px', border: '1px solid var(--border-color)' }} 
                   title="Satellite Image"
                 />
                 <img 
                   src={`http://localhost:8000/data/Train_256/masks/${filename}`} 
                   alt="Mask" 
-                  style={{ width: '50%', borderRadius: '4px', border: '1px solid #444' }} 
+                  style={{ width: '50%', borderRadius: '6px', border: '1px solid var(--border-color)' }} 
                   title="Ground Truth Mask"
                 />
               </div>
