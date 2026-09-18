@@ -21,41 +21,41 @@ const FACILITY_DETAILS = {
     }
   },
   food: {
-    title: 'Food Distribution Hub & Logistics Depot',
-    icon: '🍞',
-    color: '#f59e0b',
-    unhcrStandard: '1 Distribution Point per 5,000 people (Sphere Standards)',
-    placementRationale: 'Located alongside the main arterial road with a dedicated vehicle offloading apron to allow heavy WFP supply trucks to deliver grain and provisions without clogging residential footpaths.',
+    title: 'Food Court & Communal Nutrition Hub',
+    icon: '🍽️',
+    color: '#d946ef',
+    unhcrStandard: '1 Central Food Court & Ration Hub per 5,000 people (Sphere Standards)',
+    placementRationale: 'Positioned prominently along the main arterial corridor with high-visibility magenta marquee canopy for easy identification. Features separate queuing and sheltered dining pavilions to serve hot nutritional rations without obstructing camp transit.',
     staffing: [
-      '1 Logistics / Supply Depot Manager',
-      '6 Inventory & Ration Verification Clerks',
-      'Security personnel for crowd control & orderly queue separation',
-      'Biometric / Ration Card Verification Officers'
+      '1 Chief Nutrition & Food Operations Officer',
+      '6 Kitchen Staff & Hot Meal Preparers',
+      '4 Ration Verification & Biometric Clerks',
+      'Hygiene Stewards ensuring clean dining tables & sanitation'
     ],
     operationalSpecs: {
-      'Ration Schedule': '15-day or 30-day family food basket cycles',
-      'Storage Capacity': '50 Metric Tons grain, pulses, vegetable oil, high-energy biscuits',
-      'Queuing Apron': 'Separate lanes for vulnerable individuals, pregnant women, and elderly',
-      'Nutritional Triage': 'Attached Supplementary Feeding unit for acute malnutrition screening'
+      'Ration Capacity': 'Daily hot meal serving for up to 3,000 persons / 15-day family dry ration packs',
+      'Visual Identity': 'Distinct Vibrant Magenta (#D946EF) marquee roof canopy (zero confusion with amber family tents)',
+      'Queuing Apron': 'Dedicated shaded lines for mothers, children, elderly, and differently-abled persons',
+      'Nutrition Screening': 'Integrated Mid-Upper Arm Circumference (MUAC) malnutrition screening post'
     }
   },
-  community: {
-    title: 'Community Center & Child-Safe School Tent',
-    icon: '🏫',
-    color: '#ec4899',
-    unhcrStandard: '1 Child-Friendly Space per residential sector (approx 1,000–1,500 children)',
-    placementRationale: 'Built within the quiet, central core of the residential clusters, safely isolated from heavy traffic corridors and flood zones to provide children with education and psychosocial stability.',
+  water_tank: {
+    title: 'Water Intake & Purification Reservoir Tank',
+    icon: '🚰',
+    color: '#0284c7',
+    unhcrStandard: 'Raw water source intake, sediment filtration, and high-capacity chlorination reservoir',
+    placementRationale: 'Strategically positioned immediately adjacent to natural surface water bodies (outside the 20m flood buffer) to draw, purify, and pressurize potable water into the residential block pipelines.',
     staffing: [
-      '4–6 Emergency Primary School Teachers',
-      '2 Child Protection & Psychosocial Counselors',
-      'Community Elder / Camp Committee Liaison',
-      'Recreation & Early Childhood Play Coordinators'
+      '1 Lead Environmental / WASH Plant Operator',
+      '2 Water Quality Technicians (Hourly Turbidity & Free Residual Chlorine Testing)',
+      'Submersible Pump & Solar Generator Technicians',
+      'Pipeline Pressure & Valve Stewards'
     ],
     operationalSpecs: {
-      'Daily Shifts': 'Morning (Primary Grades), Afternoon (Adolescents & Vocational Skills)',
-      'Amenities': 'Weatherproof tarpaulins, blackboards, learning kits, sports balls',
-      'Protection Feature': 'Designated perimeter fencing to prevent unauthorized entry',
-      'Night-time Use': 'Camp coordination meetings and adult literacy workshops'
+      'Purification Stage': 'Coagulation, sand flocculation, 5-micron sediment filter, and inline chlorination (>0.5 mg/L residual)',
+      'Reservoir Capacity': '45,000–90,000 Litre elevated bladder & corrugated steel reservoir',
+      'Distribution System': 'Gravity-fed / solar-pumped pressurized manifold directly feeding residential block tap stands',
+      'Intake Setback': 'Built on stable, non-flooding high ground 10–25m from riverbank contour'
     }
   },
   water: {

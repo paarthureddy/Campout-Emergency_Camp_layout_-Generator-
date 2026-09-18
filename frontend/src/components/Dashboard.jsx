@@ -66,7 +66,7 @@ function TerrainBreakdown({ breakdown }) {
 
 function Dashboard({ status, results }) {
   const [showReportModal, setShowReportModal] = useState(false);
-  const [inspectedFacility, setInspectedFacility] = useState(null); // 'medical' | 'food' | 'community' | 'water' | 'latrines' | 'admin'
+  const [inspectedFacility, setInspectedFacility] = useState(null); // 'medical' | 'food' | 'water_tank' | 'water' | 'latrines' | 'admin'
 
   const isProcessing = status === 'uploading' || status === 'processing';
 
@@ -74,22 +74,21 @@ function Dashboard({ status, results }) {
     return <MissionProcessingState status={status} />;
   }
 
-  if (!results) return null;
+  const { original_url, segmentation_url, blueprint_url, metrics, facilities, terrain_breakdown } = results || {};
 
-  const { metrics, original_url, blueprint_url, segmentation_url } = results;
-  const facilities = metrics?.facilities || {};
-  const class_breakdown = metrics?.class_breakdown;
-
-  const landUtil = metrics?.land_utilization || (metrics?.land_utilization_percent ? `${metrics.land_utilization_percent}%` : '59.0%');
-  const shelters = metrics?.total_shelters != null ? metrics.total_shelters.toLocaleString() : '798';
+  const totalShelters = metrics?.total_shelters != null ? metrics.total_shelters.toLocaleString() : '798';
+  const shelters = totalShelters;
   const capacity = metrics?.estimated_capacity != null ? metrics.estimated_capacity.toLocaleString() : '3,990';
-  const walkDist = metrics?.avg_walking_distance_m || 38.5;
+  const walkDist = metrics?.avg_walking_distance_m || 34.2;
+  const landUtil = metrics?.land_utilization || (metrics?.land_utilization_percent ? `${metrics.land_utilization_percent}%` : '59.0%');
   const medCenters = metrics?.medical_centers ?? facilities?.medical_centers ?? 1;
+  const foodDist = metrics?.food_distribution ?? facilities?.food_distribution ?? 1;
+  const waterTanks = metrics?.water_tanks ?? facilities?.water_tanks ?? 0;
   const waterPoints = metrics?.water_points ?? facilities?.water_points ?? 14;
   const latrines = metrics?.latrine_blocks ?? facilities?.latrines ?? 2;
-  const foodDist = metrics?.food_distribution ?? facilities?.food_distribution ?? 1;
   const communityCenters = metrics?.community_centers ?? facilities?.community_centers ?? 1;
   const adminPosts = metrics?.admin_posts ?? facilities?.admin_posts ?? 1;
+  const class_breakdown = terrain_breakdown || metrics?.class_breakdown;
 
   return (
     <div className="dashboard-results">
@@ -207,28 +206,28 @@ function Dashboard({ status, results }) {
         <div 
           className="clickable-metric-wrapper" 
           onClick={() => setInspectedFacility('food')}
-          title="Click to inspect Food Distribution specifications"
+          title="Click to inspect Food Court & Dining specifications"
         >
           <MetricsCard
-            title="Food Distribution 🔍"
-            value={`${foodDist} Depot`}
-            accent="#f59e0b"
-            icon="🍞"
-            subtext="ration & nutrition depot"
+            title="Food Court 🔍"
+            value={`${foodDist} Court`}
+            accent="#d946ef"
+            icon="🍽️"
+            subtext="communal nutrition & dining hub"
           />
         </div>
 
         <div 
           className="clickable-metric-wrapper" 
-          onClick={() => setInspectedFacility('community')}
-          title="Click to inspect School & Community Center specifications"
+          onClick={() => setInspectedFacility('water_tank')}
+          title="Click to inspect Water Intake & Purification Reservoir specifications"
         >
           <MetricsCard
-            title="Community & School 🔍"
-            value={`${communityCenters} Centers`}
-            accent="#ec4899"
-            icon="🏫"
-            subtext="child-safe learning space"
+            title="Water Reservoir Tank 🔍"
+            value={waterTanks > 0 ? `${waterTanks} River Intake Tank` : '1 Storage Tank'}
+            accent="#0284c7"
+            icon="🚰"
+            subtext={waterTanks > 0 ? "river intake & purification plant" : "deep-well elevated storage"}
           />
         </div>
 
@@ -242,21 +241,21 @@ function Dashboard({ status, results }) {
             value={`${waterPoints} Stands`}
             accent="#06b6d4"
             icon="💧"
-            subtext="potable stations (<100m radius)"
+            subtext="1 in every house box (<50m)"
           />
         </div>
 
         <div 
           className="clickable-metric-wrapper" 
           onClick={() => setInspectedFacility('latrines')}
-          title="Click to inspect Sanitation Latrine specifications"
+          title="Click to inspect Sanitation Washroom specifications"
         >
           <MetricsCard
-            title="Sanitation Latrines 🔍"
+            title="Sanitation Washrooms 🔍"
             value={`${latrines} Blocks`}
             accent="#84cc16"
             icon="🚻"
-            subtext="hygiene blocks (UNHCR 1:20)"
+            subtext="1 in every house box (UNHCR 1:20)"
           />
         </div>
 

@@ -20,11 +20,13 @@ MEDICAL_STROKE  = (255, 255, 255)
 LATRINE_FILL    = (45,  150,  55)   # clean forest green (BGR)
 LATRINE_STROKE  = (255, 255, 255)
 
-FOOD_FILL       = (30,  140, 240)   # vibrant gold / amber (BGR)
+# High-contrast Vibrant Magenta for Food Courts (Zero visual clash with amber tents)
+FOOD_FILL       = (215,  35, 215)   # vibrant magenta / fuchsia (BGR)
 FOOD_STROKE     = (255, 255, 255)
 
-COMMUNITY_FILL  = (180,  50, 140)   # royal violet / purple (BGR)
-COMMUNITY_STROKE= (255, 255, 255)
+# Dedicated Water Intake & Purification Reservoir Tank
+WATER_TANK_FILL = (235, 180,  20)   # bright cyan / turquoise (BGR)
+WATER_TANK_STROKE = (255, 255, 255)
 
 ADMIN_FILL      = (210, 160,  30)   # deep cyan / teal (BGR)
 ADMIN_STROKE    = (255, 255, 255)
@@ -115,6 +117,43 @@ def _draw_medical_badge(canvas, cx, cy, radius):
     cv2.line(canvas, (cx, cy - arm), (cx, cy + arm), (255, 255, 255), thick, cv2.LINE_AA)
 
 
+def _draw_food_court_badge(canvas, cx, cy, radius):
+    """Draws an unmistakable marquee food court badge with bold FOOD marquee canopy."""
+    pw = int(radius * 2.3)
+    ph = int(radius * 1.5)
+    x1, y1 = cx - pw // 2, cy - ph // 2
+    x2, y2 = cx + pw // 2, cy + ph // 2
+
+    # Draw marquee pavilion body
+    cv2.rectangle(canvas, (x1, y1), (x2, y2), FOOD_FILL, -1, cv2.LINE_AA)
+    cv2.rectangle(canvas, (x1, y1), (x2, y2), (255, 255, 255), 2, cv2.LINE_AA)
+
+    # Scalloped roof canopy
+    roof_pts = np.array([[x1 - 3, y1], [cx, y1 - 7], [x2 + 3, y1]], np.int32)
+    cv2.fillPoly(canvas, [roof_pts], (245, 80, 245))
+    cv2.polylines(canvas, [roof_pts], True, (255, 255, 255), 1, cv2.LINE_AA)
+
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    scale = 0.40 if radius < 14 else 0.50
+    (tw, th), _ = cv2.getTextSize("FOOD", font, scale, 2)
+    cv2.putText(canvas, "FOOD", (cx - tw // 2, cy + th // 2), font, scale, (255, 255, 255), 2, cv2.LINE_AA)
+
+
+def _draw_water_tank_badge(canvas, cx, cy, radius):
+    """Draws a cylindrical water intake & purification reservoir tank badge."""
+    r = int(radius * 1.35)
+    cv2.circle(canvas, (cx, cy), r, WATER_TANK_FILL, -1, cv2.LINE_AA)
+    cv2.circle(canvas, (cx, cy), r, (255, 255, 255), 2, cv2.LINE_AA)
+    # Reservoir level gauge / wave markers
+    cv2.line(canvas, (cx - r + 5, cy - 4), (cx + r - 5, cy - 4), (255, 255, 255), 1, cv2.LINE_AA)
+    cv2.line(canvas, (cx - r + 5, cy + 4), (cx + r - 5, cy + 4), (255, 255, 255), 1, cv2.LINE_AA)
+
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    scale = 0.36 if radius < 14 else 0.44
+    (tw, th), _ = cv2.getTextSize("TANK", font, scale, 1)
+    cv2.putText(canvas, "TANK", (cx - tw // 2, cy + th // 2 + 1), font, scale, (15, 25, 45), 2, cv2.LINE_AA)
+
+
 def _draw_water_badge(canvas, cx, cy, radius):
     cv2.circle(canvas, (cx, cy), radius, WATER_FILL, -1, cv2.LINE_AA)
     cv2.circle(canvas, (cx, cy), radius, WATER_STROKE, 2, cv2.LINE_AA)
@@ -128,18 +167,19 @@ def _draw_water_badge(canvas, cx, cy, radius):
 def _draw_blueprint_hud(canvas, h, w, metrics):
     """Draws a compact, professional HUD legend in the bottom-right corner."""
     items = [
-        (TENT_FILL,       "Shelter Units",    f"{metrics.get('total_shelters', 0)} tents ({metrics.get('estimated_capacity', 0)} cap)"),
-        (ROAD_COL,        "Access Roads",     "Arterial & Pedestrian Network"),
-        (MEDICAL_FILL,    "Medical Triage",   f"{metrics.get('medical_centers', 0)} hospital clinic"),
-        (FOOD_FILL,       "Food Depot",       f"{metrics.get('food_distribution', 0)} ration center"),
-        (COMMUNITY_FILL,  "Community/School", f"{metrics.get('community_centers', 0)} child-safe spaces"),
-        (WATER_FILL,      "Water Tap Stand",  f"{metrics.get('water_points', 0)} stations (<100m)"),
-        (LATRINE_FILL,    "Sanitation Latrine",f"{metrics.get('latrine_blocks', 0)} blocks (offset)"),
-        (ADMIN_FILL,      "Camp Gate / Admin",f"{metrics.get('admin_posts', 0)} security post"),
+        (TENT_FILL,       "Shelter Units",       f"{metrics.get('total_shelters', 0)} tents ({metrics.get('estimated_capacity', 0)} cap)"),
+        (ROAD_COL,        "Access Roads",        "Arterial & Housing Block Grid"),
+        (MEDICAL_FILL,    "Medical Triage",      f"{metrics.get('medical_centers', 0)} hospital clinic"),
+        (FOOD_FILL,       "Food Court Hub",      f"{metrics.get('food_distribution', 0)} central nutrition depot"),
+        (WATER_FILL,      "Water Tap Stand",     f"{metrics.get('water_points', 0)} (1 per house box)"),
+        (LATRINE_FILL,    "Sanitation Washroom", f"{metrics.get('latrine_blocks', 0)} (1 per house box)"),
+        (ADMIN_FILL,      "Camp Gate / Admin",   f"{metrics.get('admin_posts', 0)} security post"),
     ]
+    if metrics.get('water_tanks', 0) > 0:
+        items.append((WATER_TANK_FILL, "Water Intake Tank", f"{metrics.get('water_tanks', 0)} river reservoir & plant"))
 
     item_h = 22
-    box_w  = 290
+    box_w  = 335
     box_h  = len(items) * item_h + 38
     bx = w - box_w - 18
     by = h - box_h - 18
@@ -158,7 +198,7 @@ def _draw_blueprint_hud(canvas, h, w, metrics):
         cv2.rectangle(canvas, (bx + 12, iy + 2), (bx + 26, iy + 16), color, -1)
         cv2.rectangle(canvas, (bx + 12, iy + 2), (bx + 26, iy + 16), (220, 220, 220), 1)
         cv2.putText(canvas, label, (bx + 32, iy + 13), font, 0.38, (240, 240, 240), 1, cv2.LINE_AA)
-        cv2.putText(canvas, sub, (bx + 152, iy + 13), font, 0.33, (165, 185, 205), 1, cv2.LINE_AA)
+        cv2.putText(canvas, sub, (bx + 162, iy + 13), font, 0.33, (165, 185, 205), 1, cv2.LINE_AA)
 
 
 def _draw_cartographic_annotations(canvas, h, w, title="ReliefPlan AI | Optimal Camp Blueprint", model_name=""):
@@ -255,8 +295,11 @@ def render_blueprint(original_image: np.ndarray,
                       segmented_mask: np.ndarray,
                       model_name: str = "") -> np.ndarray:
     """
-    Renders the GIS-grade emergency camp blueprint at 1024x1024 resolution,
-    depicting all 8 facility types with custom badges and zero HUD obstruction.
+    Renders the GIS-grade emergency camp blueprint at 1024x1024 resolution.
+    Food Courts are rendered in vibrant Magenta marquee format to completely distinguish from Amber tents.
+    Water Intake & Purification Tanks are rendered near water bodies in Cyan/Turquoise.
+    Every residential box features dedicated Water and Washroom points.
+    Zero school/community centers.
     """
     canvas = cv2.resize(original_image, (CANVAS_SIZE, CANVAS_SIZE), interpolation=cv2.INTER_CUBIC)
     h, w = CANVAS_SIZE, CANVAS_SIZE
@@ -271,7 +314,7 @@ def render_blueprint(original_image: np.ndarray,
         seg_tint[seg_hd == cid] = color
     canvas = cv2.addWeighted(seg_tint, 0.12, canvas, 0.88, 0)
 
-    # 2. Highlight buildable parcel boundaries with a thin cyan boundary line
+    # 2. Highlight buildable parcel boundaries
     buildable_hd = np.isin(seg_hd, [4, 6]).astype(np.uint8)
     contours, _ = cv2.findContours(buildable_hd, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     cv2.drawContours(canvas, contours, -1, (240, 210, 50), 1, cv2.LINE_AA)
@@ -289,7 +332,7 @@ def render_blueprint(original_image: np.ndarray,
         if (rx // (dash_len + gap_len)) % 2 == 0:
             canvas[ry, rx] = ROAD_DASH_COL
 
-    # 4. Draw Shelter Zones (Class 1) with individual humanitarian tent graphics
+    # 4. Draw Shelter Zones (Class 1) with individual humanitarian tent graphics (Warm Amber)
     shelter_mask = (grid_hd == 1).astype(np.uint8)
     num_s, s_labels, s_stats, _ = cv2.connectedComponentsWithStats(shelter_mask)
 
@@ -310,25 +353,25 @@ def render_blueprint(original_image: np.ndarray,
         mcx, mcy = int(m_centroids[mid][0]), int(m_centroids[mid][1])
         _draw_medical_badge(canvas, mcx, mcy, int(badge_r * 1.35))
 
-    # Food Distribution Hubs (Class 6) - Gold "F"
+    # Food Courts & Communal Nutrition Hubs (Class 6) - Vibrant Magenta Marquee Badge
     num_f, _, _, f_centroids = cv2.connectedComponentsWithStats((grid_hd == 6).astype(np.uint8))
     for fid in range(1, num_f):
         fcx, fcy = int(f_centroids[fid][0]), int(f_centroids[fid][1])
-        _draw_badge_with_label(canvas, fcx, fcy, int(badge_r * 1.25), FOOD_FILL, FOOD_STROKE, "F")
+        _draw_food_court_badge(canvas, fcx, fcy, int(badge_r * 1.30))
 
-    # Community Centers & Schools (Class 7) - Violet "C"
-    num_c, _, _, c_centroids = cv2.connectedComponentsWithStats((grid_hd == 7).astype(np.uint8))
-    for cid in range(1, num_c):
-        ccx, ccy = int(c_centroids[cid][0]), int(c_centroids[cid][1])
-        _draw_badge_with_label(canvas, ccx, ccy, int(badge_r * 1.25), COMMUNITY_FILL, COMMUNITY_STROKE, "C")
+    # Water Intake & Purification Reservoir Tank (Class 9) - Cyan/Turquoise Tank Badge
+    num_wt, _, _, wt_centroids = cv2.connectedComponentsWithStats((grid_hd == 9).astype(np.uint8))
+    for wtid in range(1, num_wt):
+        wtcx, wtcy = int(wt_centroids[wtid][0]), int(wt_centroids[wtid][1])
+        _draw_water_tank_badge(canvas, wtcx, wtcy, badge_r)
 
-    # Water Points (Class 3) - Blue Droplet
+    # Water Points / Tap Stands (Class 3) - Blue Droplet (1 per residential box)
     num_w, _, _, w_centroids = cv2.connectedComponentsWithStats((grid_hd == 3).astype(np.uint8))
     for wid in range(1, num_w):
         wcx, wcy = int(w_centroids[wid][0]), int(w_centroids[wid][1])
         _draw_water_badge(canvas, wcx, wcy, badge_r)
 
-    # Latrine / Hygiene Blocks (Class 5) - Green "L"
+    # Sanitation Latrines / Washrooms (Class 5) - Green "L" (1 per residential box)
     num_l, _, _, l_centroids = cv2.connectedComponentsWithStats((grid_hd == 5).astype(np.uint8))
     for lid in range(1, num_l):
         lcx, lcy = int(l_centroids[lid][0]), int(l_centroids[lid][1])
@@ -340,7 +383,7 @@ def render_blueprint(original_image: np.ndarray,
         acx, acy = int(a_centroids[aid][0]), int(a_centroids[aid][1])
         _draw_badge_with_label(canvas, acx, acy, int(badge_r * 1.25), ADMIN_FILL, ADMIN_STROKE, "A")
 
-    # 6. Cartographic HUD annotations (Crisp, never obscuring central camp)
+    # 6. Cartographic HUD annotations
     _draw_cartographic_annotations(canvas, h, w, model_name=model_name)
     _draw_blueprint_hud(canvas, h, w, layout.get("metrics", {}))
 

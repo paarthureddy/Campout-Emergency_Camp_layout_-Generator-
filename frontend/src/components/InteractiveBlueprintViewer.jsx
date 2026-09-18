@@ -84,10 +84,10 @@ function InteractiveBlueprintViewer({
         land_utilization: metrics?.land_utilization || "59.0%",
         facilities: {
           medical_centers: metrics?.medical_centers || 1,
-          food_depots: metrics?.food_distribution || 1,
-          community_schools: metrics?.community_centers || 1,
+          food_courts: metrics?.food_distribution || 1,
+          water_tanks: metrics?.water_tanks || 0,
           water_taps: metrics?.water_points || 14,
-          latrine_blocks: metrics?.latrine_blocks || 2,
+          latrine_blocks: metrics?.latrine_blocks || 14,
           admin_posts: metrics?.admin_posts || 1
         }
       },

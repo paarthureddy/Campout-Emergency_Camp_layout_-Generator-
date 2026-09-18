@@ -24,8 +24,8 @@ for path in test_paths:
     print(f"Total Shelters: {m['total_shelters']} (Primary: {m['primary_blocks']}, Infill: {m['infill_blocks']})")
     print(f"Population Capacity: {m['estimated_capacity']} persons")
     print(f"Land Utilization: {m['land_utilization']}")
-    print(f"Facilities: Hospital={m['medical_centers']} | Food Depot={m['food_distribution']} | Community/School={m['community_centers']}")
-    print(f"            Water Taps={m['water_points']} | Latrines={m['latrine_blocks']} | Admin Gate={m['admin_posts']}")
+    print(f"Facilities: Hospital={m['medical_centers']} | Food Court={m['food_distribution']} | Water Tanks={m.get('water_tanks', 0)}")
+    print(f"            Water Taps={m['water_points']} | Latrines={m['latrine_blocks']} | Boxes Planned={m.get('residential_boxes', 0)} | Admin Gate={m['admin_posts']}")
     print(f"Avg Walking Distance: {m['avg_walking_distance_m']} m | UNHCR Compliance: {m['unhcr_compliance']}")
 
     bp = render_blueprint(img, layout, mask, model_name='deeplabv3')
