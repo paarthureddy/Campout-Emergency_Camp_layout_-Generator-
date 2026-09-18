@@ -30,8 +30,9 @@ function Home() {
       
       setJobStatus('completed');
       setResults({
-        metrics: data.results,
-        blueprint_url: data.blueprint_url
+        metrics:          data.results,
+        blueprint_url:    data.blueprint_url,
+        segmentation_url: data.segmentation_url,
       });
     } catch (error) {
       console.error('Error uploading file:', error);

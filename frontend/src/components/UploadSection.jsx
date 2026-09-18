@@ -2,7 +2,7 @@ import React, { useRef, useState } from 'react';
 
 function UploadSection({ onUpload }) {
   const fileInputRef = useRef(null);
-  const [selectedModel, setSelectedModel] = useState('unet');
+  const [selectedModel, setSelectedModel] = useState('deeplabv3');
 
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
@@ -57,6 +57,51 @@ function UploadSection({ onUpload }) {
       <button className="btn-primary" onClick={(e) => { e.stopPropagation(); fileInputRef.current.click(); }}>
         Generate Layout Blueprint
       </button>
+
+      {/* ── Quick Test Sample Images ────────────────────────── */}
+      <div style={{ marginTop: '2rem', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1.5rem', width: '100%' }} onClick={(e) => e.stopPropagation()}>
+        <p style={{ fontSize: '0.9rem', color: '#94a3b8', marginBottom: '0.8rem', fontWeight: 600 }}>
+          ⚡ Or select a benchmark disaster site to test:
+        </p>
+        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+          {[
+            { id: 'sample_open_land.png', label: '🌾 Open Rural Plain', desc: 'Continuous arable land' },
+            { id: 'sample_river_basin.png', label: '🌊 River Basin (Water)', desc: 'Water exclusion zone' },
+            { id: 'sample_farmland.png', label: '🚜 Agricultural Valley', desc: 'Complex field contours' },
+          ].map((sample) => (
+            <button
+              key={sample.id}
+              type="button"
+              className="tab-btn"
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                padding: '0.6rem 1rem',
+                borderRadius: '8px',
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid rgba(255, 255, 255, 0.15)',
+                cursor: 'pointer',
+                textAlign: 'center',
+                transition: 'all 0.2s',
+              }}
+              onClick={async () => {
+                try {
+                  const res = await fetch(`http://localhost:8000/static/samples/${sample.id}`);
+                  const blob = await res.blob();
+                  const file = new File([blob], sample.id, { type: 'image/png' });
+                  onUpload(file, selectedModel);
+                } catch (err) {
+                  console.error('Failed to load sample:', err);
+                }
+              }}
+            >
+              <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{sample.label}</span>
+              <span style={{ fontSize: '0.75rem', color: '#64748b' }}>{sample.desc}</span>
+            </button>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
