@@ -14,6 +14,7 @@ import subprocess
 class UploadResponse(BaseModel):
     message: str
     job_id: str
+    original_url: str = ""
     blueprint_url: str
     segmentation_url: str
     results: Dict[str, Any]
@@ -124,11 +125,14 @@ async def upload_image(file: UploadFile = File(...), model: str = Form("unet")):
         seg_map = create_semantic_overlay(original_image, segmented_mask)
 
         # ── Save outputs ──────────────────────────────────────────────────────
+        orig_filename        = f"{job_id}_original.png"
         blueprint_filename   = f"{job_id}_blueprint.png"
         seg_filename         = f"{job_id}_segmentation.png"
+        orig_path      = os.path.join(STATIC_DIR, orig_filename)
         blueprint_path = os.path.join(STATIC_DIR, blueprint_filename)
         seg_path       = os.path.join(STATIC_DIR, seg_filename)
 
+        cv2.imwrite(orig_path,      original_image)
         cv2.imwrite(blueprint_path, blueprint)
         cv2.imwrite(seg_path,       seg_map)
 
@@ -139,6 +143,7 @@ async def upload_image(file: UploadFile = File(...), model: str = Form("unet")):
         return JSONResponse(status_code=200, content={
             "message":         f"Pipeline completed using {model} model.",
             "job_id":          job_id,
+            "original_url":    f"http://localhost:8000/static/{orig_filename}",
             "blueprint_url":   f"http://localhost:8000/static/{blueprint_filename}",
             "segmentation_url": f"http://localhost:8000/static/{seg_filename}",
             "results": {

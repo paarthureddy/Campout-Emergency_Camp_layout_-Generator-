@@ -8,7 +8,7 @@ function Home() {
   const [jobStatus, setJobStatus] = useState(null); // null | 'uploading' | 'processing' | 'completed'
   const [results, setResults] = useState(null);
 
-  const handleUpload = async (file, modelName) => {
+  const handleUpload = async (file, modelName, scenarioParams = {}) => {
     setJobStatus('uploading');
     
     const formData = new FormData();
@@ -31,8 +31,10 @@ function Home() {
       setJobStatus('completed');
       setResults({
         metrics:          data.results,
+        original_url:     data.original_url || data.blueprint_url,
         blueprint_url:    data.blueprint_url,
         segmentation_url: data.segmentation_url,
+        scenarioParams:   scenarioParams,
       });
     } catch (error) {
       console.error('Error uploading file:', error);
