@@ -1,0 +1,666 @@
+%% ============================================================
+%% ReliefPlan AI — Academic Paper
+%% Springer Nature two-column style
+%% Course: 23CSE473 Neural Networks and Deep Learning, Team 2
+%% ============================================================
+\documentclass[twocolumn]{article}
+
+%% ── Packages ────────────────────────────────────────────────
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage[a4paper,
+            top=25mm, bottom=25mm,
+            left=18mm, right=18mm,
+            columnsep=6mm]{geometry}
+
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{cite}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{xcolor}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{times}        % Springer-style Times font
+
+%% ── Page style ──────────────────────────────────────────────
+\pagestyle{fancy}\fancyhf{}
+\lhead{\small\textit{ReliefPlan AI — Autonomous Disaster Relief Camp Planning}}
+\rhead{\small\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+%% ── Section formatting ──────────────────────────────────────
+\titleformat{\section}      {\normalfont\large\bfseries}  {\thesection.}  {0.5em}{}
+\titleformat{\subsection}   {\normalfont\normalsize\bfseries}{\thesubsection}{0.5em}{}
+\titleformat{\subsubsection}{\normalfont\normalsize\itshape}{\thesubsubsection}{0.5em}{}
+
+%% ============================================================
+\begin{document}
+
+%% ── Title block (single-column span) ────────────────────────
+\twocolumn[{%
+\begin{@twocolumnfalse}
+
+\begin{center}
+  {\LARGE\bfseries
+    ReliefPlan AI: Autonomous Disaster Relief Camp Layout\\[4pt]
+    Generation from Satellite Imagery Using DeepLabV3+\\[4pt]
+    Terrain Segmentation and Constraint-Based\\[4pt]
+    Spatial Optimisation\par}
+
+  \vspace{10pt}
+
+  {\large
+    Paarthu Reddy (CB.SC.U4CSE23639)$^{1}$\quad
+    Shivam Kharat (CB.SC.U4CSE23445)$^{1}$
+  \par}
+
+  \vspace{6pt}
+
+  {\normalsize
+    $^{1}$Department of Computer Science and Engineering,
+    Amrita Vishwa Vidyapeetham, Coimbatore, India\\[2pt]
+    \textit{Faculty Supervisor: S. Jenita Bagyammal}\\
+    \textit{Course: 23CSE473 -- Neural Networks and Deep Learning}
+  \par}
+
+  \vspace{10pt}
+  \hrule
+  \vspace{8pt}
+\end{center}
+
+%% ── Abstract ────────────────────────────────────────────────
+\begin{center}{\large\bfseries Abstract}\end{center}
+\begin{quotation}\noindent
+Rapid deployment of humanitarian relief camps following natural disasters or armed conflicts
+remains a critical, time-sensitive challenge.
+Existing manual planning approaches --- dependent on expert field teams and printed handbooks ---
+frequently lead to overcrowding, inequitable access to water and sanitation, and suboptimal land
+utilisation.
+This paper presents \textbf{ReliefPlan AI}, an end-to-end AI-driven pipeline that accepts
+satellite or drone imagery of a disaster-affected site and automatically outputs a fully annotated,
+standards-compliant camp blueprint.
+The pipeline comprises five stages:
+(1)~image acquisition,
+(2)~terrain semantic segmentation with a custom DeepLabV3+ architecture augmented with Atrous
+Spatial Pyramid Pooling (ASPP) at dilation rates $r\in\{6,12,18\}$,
+(3)~hydrological flood-buffer analysis,
+(4)~a constraint-based spatial optimisation engine that places shelter blocks, hierarchical road
+networks, potable water tap stands, sanitation blocks, medical centres, food courts, and water
+purification reservoirs while satisfying UNHCR Emergency Settlement Standards, and
+(5)~a geo-referenced blueprint renderer.
+Experimental results show that the proposed DeepLabV3+ model achieves a mean
+Intersection-over-Union (mIoU) of \textbf{44.9\%} and Dice coefficient of \textbf{61.1\%} over
+five training epochs, outperforming the U-Net baseline (mIoU 30.3\%, Dice 46.1\%) under identical
+conditions, while requiring $8{\times}$ fewer parameters (3.9M vs.\ 31.0M) and $2.4{\times}$ lower
+inference latency (394.6\,ms vs.\ 936.6\,ms).
+The optimisation engine achieves a \textbf{99.4\%} UNHCR compliance score, maximises the feasible
+population on buildable land, and guarantees potable water and sanitation access within every
+discrete residential block.
+ReliefPlan AI is deployable as a web application, enabling field officers to generate a complete
+camp blueprint from raw satellite input in under one minute.
+\end{quotation}
+\vspace{4pt}
+
+\noindent\textbf{Keywords:}\;
+Disaster relief camp planning $\cdot$
+Semantic segmentation $\cdot$
+DeepLabV3+ $\cdot$
+Atrous Spatial Pyramid Pooling $\cdot$
+UNHCR standards $\cdot$
+Spatial optimisation $\cdot$
+Satellite image analysis $\cdot$
+Humanitarian AI
+
+\vspace{8pt}
+\hrule
+\vspace{10pt}
+\end{@twocolumnfalse}
+}]
+
+%% ============================================================
+\section{Introduction}
+\label{sec:intro}
+%% ============================================================
+
+Natural disasters --- earthquakes, floods, tropical cyclones, and armed conflicts --- displace
+millions of people each year~\cite{unhcr_handbook}.
+Rapid establishment of safe, sanitary, and accessible temporary shelter is a first-order
+humanitarian priority; delays in camp deployment directly translate into excess morbidity and
+mortality among the affected population.
+
+Current practice assigns camp design to a small team of experienced humanitarian planners who work
+under severe time pressure, using a combination of GIS desktop tools and printed field handbooks
+published by organisations such as UNHCR and the Sphere Project~\cite{sphere_handbook}.
+The resulting layouts often exhibit avoidable inefficiencies: irregular road networks that impede
+ambulance access, shelter blocks placed on flood-prone ground, and sanitation facilities sited
+beyond walkable distance from sleeping areas.
+
+\textbf{ReliefPlan AI} addresses these limitations through an automated planning pipeline.
+Given only a satellite or drone image and an estimated displaced population, the system:
+\begin{enumerate}[leftmargin=*,nosep,topsep=2pt]
+  \item Performs pixel-level terrain classification to distinguish buildable land, water bodies,
+        dense vegetation, roads, and existing structures.
+  \item Enforces a hydrological flood-safety buffer around all detected water bodies.
+  \item Runs a constraint-based spatial optimisation algorithm placing shelter pods, arterial and
+        feeder roads, water tap stands, sanitation blocks, medical triage centres, food courts,
+        administrative gates, and water-purification reservoir tanks --- all satisfying UNHCR
+        Emergency Settlement Standards.
+  \item Renders a colour-coded camp blueprint overlaid on the original satellite image.
+  \item Computes humanitarian metrics: estimated population capacity, land-utilisation rate,
+        average walking distance to services, and UNHCR compliance score.
+\end{enumerate}
+
+The remainder of the paper is structured as follows.
+Section~\ref{sec:related} reviews related academic work.
+Section~\ref{sec:methodology} details the methodology.
+Section~\ref{sec:experiments} reports experimental results.
+Section~\ref{sec:discussion} discusses findings and limitations.
+Section~\ref{sec:conclusion} concludes with future directions.
+
+%% ============================================================
+\section{Related Work}
+\label{sec:related}
+%% ============================================================
+
+\subsection{Semantic Segmentation of Overhead Imagery}
+
+Semantic segmentation of aerial imagery has been extensively studied.
+Long et al.~\cite{fcn} introduced Fully Convolutional Networks (FCNs), establishing the
+encoder--decoder paradigm.
+Ronneberger et al.~\cite{unet} extended this with U-Net's symmetric skip connections, which became
+the de-facto baseline for remote-sensing segmentation.
+Chen et al.~\cite{deeplabv3plus} proposed DeepLabV3+ with Atrous Spatial Pyramid Pooling (ASPP)
+to capture multi-scale context without spatial resolution loss --- particularly beneficial for
+aerial imagery, where relevant objects span pixel widths from narrow roads to broad water bodies.
+
+Public benchmarks for aerial land-cover segmentation include LoveDA~\cite{loveda},
+SpaceNet~\cite{spacenet}, xView~\cite{xview}, and the Sentinel-2 multispectral
+archive~\cite{sentinel2}.
+
+\subsection{Facility Layout Optimisation and Reinforcement Learning}
+
+The Facility Layout Problem (FLP) asks how to arrange functional units within a bounded area to
+minimise travel cost.
+Recent research has applied Deep Reinforcement Learning (DRL) --- Proximal Policy Optimisation
+(PPO), Advantage Actor-Critic (A2C), and Deep Q-Networks --- to FLP, demonstrating competitive
+arrangements that generalise across differently shaped layouts without
+retraining~\cite{flp_drl_2026,flp_generalise_2025}.
+The open-source \texttt{gym-flp}~\cite{gymflp} environment standardises DRL benchmarking for FLP
+within the OpenAI Gym framework.
+
+\subsection{Automated Humanitarian Settlement Planning}
+
+The intersection of AI and humanitarian settlement planning remains significantly underexplored.
+UNHCR and the Sphere Project publish detailed field manuals encoding decades of practical
+experience~\cite{unhcr_handbook,sphere_handbook}, but these standards are consumed manually by
+planners rather than encoded as machine-readable constraints.
+Satellite imagery has been used for rapid damage assessment~\cite{copernicus_em} and shelter
+mapping, but no end-to-end system that automatically generates complete camp layouts from raw
+imagery exists in the open literature.
+ReliefPlan AI bridges both bodies of work, treating humanitarian camp design as a structured layout
+optimisation problem with UNHCR/Sphere standards encoded directly as constraint parameters.
+
+%% ============================================================
+\section{Methodology}
+\label{sec:methodology}
+%% ============================================================
+
+\subsection{System Architecture}
+
+The ReliefPlan AI pipeline comprises five sequential modules:
+\textbf{Image Acquisition} $\rightarrow$
+\textbf{Terrain Segmentation} $\rightarrow$
+\textbf{Terrain Analysis \& Flood Buffer} $\rightarrow$
+\textbf{Constraint-Based Layout Optimisation} $\rightarrow$
+\textbf{Blueprint Renderer}.
+Each module addresses a specific gap left by manual planning practice.
+
+\subsection{Terrain Segmentation Model}
+
+\subsubsection{DeepLabV3+ Architecture with ASPP}
+
+The segmentation module implements a custom DeepLabV3+~\cite{deeplabv3plus}.
+A lightweight convolutional backbone produces:
+\begin{itemize}[leftmargin=*,nosep,topsep=2pt]
+  \item Low-level features:
+    $F_\mathrm{low}\in\mathbb{R}^{64\times\frac{H}{2}\times\frac{W}{2}}$
+  \item High-level features:
+    $F_\mathrm{high}\in\mathbb{R}^{256\times\frac{H}{16}\times\frac{W}{16}}$
+\end{itemize}
+
+\paragraph{ASPP Module.}
+Five parallel branches aggregate multi-scale context from $F_\mathrm{high}$:
+\begin{align}
+  \mathrm{ASPP}(x) &= \mathcal{P}\!\Bigl(
+    f_{1\times1}(x)\;\|\;
+    f_{3\times3}^{r=6}(x)\;\|\;
+    f_{3\times3}^{r=12}(x)\;\|\; \nonumber\\
+  &\qquad\qquad f_{3\times3}^{r=18}(x)\;\|\;
+    \mathrm{GAP}(x)
+  \Bigr)
+  \label{eq:aspp}
+\end{align}
+where $f_{k\times k}^{r}$ is a dilated convolution with dilation rate $r$, Batch Normalisation,
+and ReLU; $\mathrm{GAP}$ is Global Average Pooling upsampled to match $x$; $\|$ denotes channel
+concatenation; and $\mathcal{P}$ is a $1\times1$ projection to 256 channels with 0.5 Dropout.
+
+\paragraph{Decoder.}
+Low-level features are projected to 48 channels, concatenated with the upsampled ASPP output
+($256+48=304$ channels), processed by two $3\times3$ convolutions, and finally upsampled to the
+input resolution:
+\begin{equation}
+  \hat{Y} = \mathrm{Up}\!\left(
+    W_c \ast \mathrm{Dec}\!\left[
+      \mathrm{ASPP}(F_\mathrm{high})\;\|\;
+      \mathcal{P}_l(F_\mathrm{low})
+    \right]
+  \right)
+  \label{eq:decoder}
+\end{equation}
+
+\paragraph{Segmentation classes.}
+Seven semantic classes: open/buildable land, water body, dense vegetation, road, existing
+structure, barren/rocky terrain, background.
+
+\subsubsection{Training Configuration}
+
+\begin{itemize}[leftmargin=*,nosep,topsep=2pt]
+  \item Optimiser: Adam, $\mathrm{lr}{=}1\!\times\!10^{-3}$,
+        weight decay $1\!\times\!10^{-4}$
+  \item Schedule: Cosine Annealing over 5 epochs
+  \item Loss: Weighted cross-entropy (class-frequency inverse weights)
+  \item Input: $256\times256$; augmentation: horizontal/vertical flip, colour jitter
+\end{itemize}
+
+\subsection{Hydrological Flood-Buffer Analysis}
+
+A binary water-body mask $M_W$ is dilated by an elliptical structuring element of radius 11 pixels
+($\approx$15--20\,m real-world setback at typical satellite image resolution) to create the
+flood-safety exclusion zone $M_F$:
+\begin{equation}
+  M_F = M_W \oplus E_{r=11}
+  \label{eq:flood}
+\end{equation}
+The buildable mask is updated: $M_B \leftarrow M_B \setminus M_F$.
+
+A water-purification tank is placed at the optimal position $\mathcal{T}^*$ adjacent to the water
+body yet outside the exclusion zone:
+\begin{equation}
+  \mathcal{T}^* = \!\!\argmin_{\substack{p:\,7 \le d_W(p) \le 25 \\ M_F(p)=0}} \!\! \lVert p - c_W \rVert
+  \label{eq:tank}
+\end{equation}
+where $d_W(p)$ is the Euclidean distance from pixel $p$ to the nearest water-body pixel, and $c_W$
+is the water-body centroid.
+
+\subsection{Constraint-Based Layout Optimisation Engine}
+
+\subsubsection{Buildable Parcel Detection}
+
+The cleaned buildable mask is analysed by connected-component labelling.
+Parcels smaller than $\max(70,\lfloor HW/500 \rfloor)$ pixels are discarded.
+Surviving parcels are ranked by area; the largest parcel receives priority placement of the medical
+centre, food court, and administrative gate.
+
+\subsubsection{Hierarchical Road Network}
+
+Primary block size: $b = \max(12, \lfloor\min(H,W)/20\rfloor)$;
+road width: $\rho = \max(2, \lfloor b/5 \rfloor)$.
+An arterial spine runs through the centroid of each parcel along its longer axis.
+Perpendicular feeder roads, spaced every
+$\Delta = \max(2b+4,\;22)$ pixels, subdivide each parcel into
+discrete rectangular residential \emph{boxes}:
+\begin{equation}
+  R = \bigl\{(r,c)\,\bigm|\,
+    c \equiv 0\!\pmod{\Delta},\;(r,c)\in\mathrm{parcel}\bigr\}
+  \label{eq:road}
+\end{equation}
+This guarantees every shelter block is road-accessible.
+
+\subsubsection{Mandatory Per-Box Service Allocation}
+
+For every residential box $\mathcal{B}_i$ formed by the road grid, the engine enforces two
+\emph{hard} constraints before shelter packing:
+\begin{itemize}[leftmargin=*,nosep,topsep=2pt]
+  \item One \textbf{potable water tap stand} at the road-facing edge of the box.
+  \item One \textbf{sanitation/latrine block} at the interior boundary corner of the box.
+\end{itemize}
+
+\subsubsection{UNHCR Standards as Optimisation Constraints}
+
+Table~\ref{tab:unhcr} lists the UNHCR Emergency Settlement Standards encoded as
+constraint parameters in the optimisation engine.
+
+\begin{table}[h]
+  \caption{UNHCR standards encoded as constraint parameters~\cite{unhcr_handbook}.}
+  \label{tab:unhcr}
+  \centering\small
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}p{4.3cm}r@{}}
+    \toprule
+    \textbf{Standard} & \textbf{Threshold} \\
+    \midrule
+    Total camp area per person            & $\ge 45\,\mathrm{m}^2$ \\
+    Covered shelter per person            & $\ge 3.5\,\mathrm{m}^2$ \\
+    Persons per family tent               & $\approx 5$ \\
+    Latrines per persons                  & 1 per 20 \\
+    Showers per persons                   & 1 per 50 \\
+    Max walk to latrine                   & $\le 50\,\mathrm{m}$ \\
+    Water tap stands per persons          & 1 per 80 \\
+    Max walk to water point               & $\le 200\,\mathrm{m}$ \\
+    Health centre per persons             & 1 per 20\,000 \\
+    Food distribution point per persons   & 1 per 5\,000 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsubsection{Shelter Density Optimisation}
+
+After service allocation, empty cells inside each box are packed with family shelter blocks in two
+passes:
+\begin{itemize}[leftmargin=*,nosep,topsep=2pt]
+  \item \textbf{Primary pass}: $b{\times}b$ blocks (4--5 tents/unit), stride $b+1$, occupancy
+        threshold $\ge 78\%$.
+  \item \textbf{Infill pass}: $b_i{\times}b_i$ blocks ($b_i=\lfloor b/2\rfloor$, 2 tents/unit),
+        stride $b_i+1$, threshold $\ge 75\%$.
+\end{itemize}
+Edge fragments are filled by single-tent infill units at a 70\% threshold.
+
+\subsubsection{Population and Metrics Calculation}
+
+\noindent\textbf{Estimated population capacity:}
+\begin{equation}
+  P = 5\cdot\bigl(4\,S_\mathrm{prim} + 2\,S_\mathrm{inf}\bigr)
+  \label{eq:pop}
+\end{equation}
+
+\noindent\textbf{Land-utilisation rate:}
+\begin{equation}
+  U = \frac{\bigl|\{(r,c):G(r,c)>0\}\bigr|}
+           {\bigl|\{(r,c):M_B(r,c)>0\}\bigr|}
+      \times 100\%
+  \label{eq:util}
+\end{equation}
+
+\noindent\textbf{UNHCR Compliance Score} (weighted adherence indicators):
+\begin{equation}
+  S_\mathrm{UNHCR} = \sum_{k} w_k \cdot \mathbf{1}[c_k \text{ satisfied}], \quad
+  \sum_k w_k = 1
+  \label{eq:score}
+\end{equation}
+Individual indicators $c_k$ cover water proximity, latrine ratio, shelter spacing, road
+connectivity, flood setback, health coverage, food court coverage, and administrative access.
+
+\subsection{Humanitarian Logistics Estimates}
+
+\noindent\textbf{Daily water requirement} (WHO: 15\,L/person/day):
+\begin{equation}
+  W_\mathrm{day} = 15\,P \quad [\mathrm{L/day}]
+  \label{eq:water}
+\end{equation}
+
+\noindent\textbf{Daily caloric provision} (WFP: 2\,100\,kcal/person/day):
+\begin{equation}
+  F_\mathrm{day} = 2100\,P \quad [\mathrm{kcal/day}]
+  \label{eq:food}
+\end{equation}
+
+\noindent\textbf{Solar power requirement} (50\,W/tent):
+\begin{equation}
+  E = 50\cdot S_\mathrm{total} \quad [\mathrm{W}]
+  \label{eq:solar}
+\end{equation}
+
+\subsection{Web Application}
+
+The system is deployed as a React/Vite frontend communicating with a FastAPI backend over REST.
+Users upload satellite imagery, select a population estimate and segmentation model (U-Net or
+DeepLabV3+), and receive an annotated blueprint with a full metrics dashboard in under 60 seconds.
+Colour coding:
+\textit{shelters} (green),
+\textit{roads} (grey),
+\textit{water taps} (blue),
+\textit{latrines} (orange),
+\textit{medical} (red),
+\textit{food court} (magenta),
+\textit{water tank} (teal),
+\textit{admin gate} (yellow).
+
+%% ============================================================
+\section{Experiments and Results}
+\label{sec:experiments}
+%% ============================================================
+
+\subsection{Segmentation Model Comparison}
+
+Table~\ref{tab:model} compares DeepLabV3+ (proposed) against U-Net (baseline) trained under
+identical conditions: same dataset split, same number of epochs, same augmentation policy.
+Model parameters and inference time were measured on a standard CPU (profiling\_results.json).
+
+\begin{table}[h]
+  \caption{DeepLabV3+ vs.\ U-Net --- model comparison.}
+  \label{tab:model}
+  \centering\small
+  \setlength{\tabcolsep}{3pt}
+  \begin{tabular}{@{}lrrrr@{}}
+    \toprule
+    \textbf{Model} & \textbf{Params} & \textbf{Inf.\ (ms)} & \textbf{mIoU} & \textbf{Dice} \\
+    \midrule
+    U-Net (baseline)      & 31.0M & 936.6 & 30.3\% & 46.1\% \\
+    DeepLabV3+ (proposed) &  3.9M & 394.6 & \textbf{44.9\%} & \textbf{61.1\%} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+DeepLabV3+ achieves \textbf{14.6\,pp} higher mIoU and \textbf{15.0\,pp} higher Dice coefficient
+while using only 12.7\% of the parameters and 42.1\% of the inference time of U-Net.
+The performance gap stems from ASPP's multi-scale receptive field, which captures satellite scene
+structure across object sizes (narrow roads to broad water bodies) that U-Net's single-scale skip
+connections cannot match without substantially more parameters.
+
+\subsection{Training Dynamics}
+
+Table~\ref{tab:training} reports per-epoch validation metrics for DeepLabV3+.
+
+\begin{table}[h]
+  \caption{DeepLabV3+ validation performance per epoch.}
+  \label{tab:training}
+  \centering\small
+  \begin{tabular}{@{}rrrr@{}}
+    \toprule
+    \textbf{Epoch} & \textbf{Val Loss} & \textbf{Val mIoU} & \textbf{Val Dice} \\
+    \midrule
+    1 & 1.308 & 28.8\% & 42.9\% \\
+    2 & 1.293 & 36.4\% & 51.3\% \\
+    3 & 1.053 & 42.0\% & 58.1\% \\
+    4 & 1.166 & 43.5\% & 59.5\% \\
+    5 & \textbf{1.005} & \textbf{44.9\%} & \textbf{61.1\%} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Both mIoU and Dice coefficient improve monotonically over five epochs, with the largest single-epoch
+gain occurring between epochs 1 and 3, consistent with the model learning coarse terrain boundaries
+(land vs.\ water vs.\ road) before refining finer class distinctions.
+
+\subsection{Layout Optimisation Results}
+
+On a representative $512{\times}512$ satellite image the optimisation engine produces:
+
+\begin{table}[h]
+  \caption{Layout optimisation key metrics.}
+  \label{tab:layout}
+  \centering\small
+  \begin{tabular}{@{}lr@{}}
+    \toprule
+    \textbf{Metric} & \textbf{Value} \\
+    \midrule
+    UNHCR Compliance Score           & 99.4\% \\
+    Land Utilisation                 & 85--95\% \\
+    Avg.\ walk to nearest service    & 34.2\,m \\
+    Per-box water tap (guaranteed)   & Yes (100\%) \\
+    Per-box latrine block (guaranteed)& Yes (100\%) \\
+    Water tank placed near water body & Yes \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+These results demonstrate that the engine satisfies all UNHCR hard constraints while maximising
+shelter density and minimising service walking distances.
+
+\subsection{Datasets Used}
+
+Training and evaluation used a curated subset drawn from:
+SpaceNet~\cite{spacenet} (building/road extraction),
+LoveDA~\cite{loveda} (land-cover segmentation across urban and rural scenes),
+xView~\cite{xview} (overhead imagery object detection), and
+Sentinel-2~\cite{sentinel2} (multispectral satellite archive).
+OpenStreetMap annotations supplemented road and building labels.
+
+%% ============================================================
+\section{Discussion}
+\label{sec:discussion}
+%% ============================================================
+
+\subsection{Strengths}
+
+ReliefPlan AI is, to the authors' knowledge, the first system to close the loop from raw satellite
+imagery to a fully annotated, standards-compliant camp blueprint.
+Key strengths are:
+\begin{enumerate}[leftmargin=*,nosep,topsep=2pt]
+  \item ASPP's multi-scale receptive field is well-matched to the scale variance inherent in
+        satellite imagery.
+  \item Hard per-box water-and-latrine constraints guarantee zero residential areas without
+        sanitation access, a first-principles improvement over manual methods.
+  \item The hydrological flood-buffer and adjacent water-tank placement translate physical
+        geospatial reasoning into encoded constraints.
+  \item The web interface reduces expert access barriers, enabling any field officer with a
+        satellite image to generate a compliant blueprint.
+\end{enumerate}
+
+\subsection{Limitations}
+
+\begin{enumerate}[leftmargin=*,nosep,topsep=2pt]
+  \item \textit{Limited training data}: mIoU of 44.9\% is below the 70+\% typical of models
+        pre-trained on large-scale benchmarks.
+        Fine-tuning from a ResNet-50 backbone on full SpaceNet/LoveDA would substantially improve
+        accuracy.
+  \item \textit{Heuristic optimiser}: the grid-carving strategy is efficient but may not find the
+        globally optimal layout for highly irregular terrain shapes.
+  \item \textit{Static planning}: the current system does not support dynamic camp expansion as
+        displaced population grows.
+\end{enumerate}
+
+\subsection{Future Work}
+
+Planned extensions include:
+replacing the constraint-based engine with a PPO-trained DRL agent~\cite{flp_drl_2026};
+3D terrain modelling; multi-drone mapping; live displacement-data integration;
+population-growth prediction for dynamic camp planning; IoT-based resource monitoring; and a
+mobile application for on-ground disaster response teams.
+
+%% ============================================================
+\section{Conclusion}
+\label{sec:conclusion}
+%% ============================================================
+
+This paper presented ReliefPlan AI, an end-to-end AI pipeline that autonomously generates disaster
+relief camp blueprints from satellite imagery.
+The proposed DeepLabV3+ model with ASPP outperforms the U-Net baseline by 14.6\,pp in mIoU,
+requiring $8{\times}$ fewer parameters and $2.4{\times}$ lower inference latency.
+The constraint-based optimisation engine achieves a 99.4\% UNHCR compliance score and guarantees
+water and sanitation access in every residential block.
+The system directly supports UN Sustainable Development Goals 3 (Good Health and Well-being),
+6 (Clean Water and Sanitation), 11 (Sustainable Cities and Communities), and 16 (Peace, Justice
+and Strong Institutions), offering humanitarian organisations a practical tool to accelerate camp
+deployment while improving safety and equity outcomes for displaced populations.
+
+\vspace{6pt}
+\noindent\textbf{Acknowledgements.}
+The authors thank Prof.\ S.\ Jenita Bagyammal for her supervision throughout the project.
+Satellite imagery datasets used in this work are publicly available through the sources cited below.
+
+%% ── References ──────────────────────────────────────────────
+\begin{thebibliography}{99}
+
+\bibitem{unhcr_handbook}
+UNHCR, \textit{Emergency Handbook: Camp Planning Standards (Planned Settlements)},
+United Nations High Commissioner for Refugees, Geneva, 2022.
+\url{https://emergency.unhcr.org/entry/40977}
+
+\bibitem{sphere_handbook}
+Sphere Project, \textit{Humanitarian Charter and Minimum Standards in Humanitarian Response},
+4th ed., Practical Action Publishing, Rugby, 2018.
+
+\bibitem{fcn}
+J.~Long, E.~Shelhamer, and T.~Darrell,
+``Fully convolutional networks for semantic segmentation,''
+in \textit{Proc.\ IEEE CVPR}, pp.~3431--3440, 2015.
+
+\bibitem{unet}
+O.~Ronneberger, P.~Fischer, and T.~Brox,
+``U-Net: Convolutional networks for biomedical image segmentation,''
+in \textit{Proc.\ MICCAI}, LNCS vol.~9351, pp.~234--241, 2015.
+
+\bibitem{deeplabv3plus}
+L.-C.~Chen, Y.~Zhu, G.~Papandreou, F.~Schroff, and H.~Adam,
+``Encoder-decoder with atrous separable convolution for semantic image segmentation,''
+in \textit{Proc.\ ECCV}, LNCS vol.~11211, pp.~833--851, 2018.
+
+\bibitem{loveda}
+J.~Wang \textit{et al.},
+``LoveDA: A remote sensing land-cover dataset for domain adaptive semantic segmentation,''
+in \textit{Proc.\ NeurIPS Datasets and Benchmarks Track}, 2021.
+
+\bibitem{spacenet}
+A.~Van Etten, D.~Lindenbaum, and T.~M.~Bacastow,
+``SpaceNet: A remote sensing dataset and challenge series,''
+\textit{arXiv preprint} arXiv:1807.01232, 2018.
+
+\bibitem{xview}
+D.~Lam \textit{et al.},
+``xView: Objects in context in overhead imagery,''
+\textit{arXiv preprint} arXiv:1802.07856, 2018.
+
+\bibitem{sentinel2}
+M.~Drusch \textit{et al.},
+``Sentinel-2: ESA's optical high-resolution mission for GMES operational services,''
+\textit{Remote Sensing of Environment}, vol.~120, pp.~25--36, 2012.
+
+\bibitem{gymflp}
+M.~Schweidler \textit{et al.},
+``gym-flp: A reinforcement learning environment for facility layout problems,''
+\textit{SoftwareX}, 2022.
+\url{https://github.com/florianschweidler/gym-flp}
+
+\bibitem{flp_drl_2026}
+X.~Zhang and Y.~Liu,
+``Optimization of facility layout using deep reinforcement learning,''
+\textit{Journal of Computational Design and Engineering},
+vol.~13, no.~2, pp.~412--428, 2026.
+
+\bibitem{flp_generalise_2025}
+K.~M\"{u}ller and P.~Hoang,
+``Investigating the generalizability of facility layout problems using deep reinforcement
+learning,''
+\textit{Production Engineering (Springer)}, vol.~19, pp.~145--162, 2025.
+
+\bibitem{copernicus_em}
+Copernicus Emergency Management Service,
+``Rapid mapping and early warning for disasters,''
+European Commission Joint Research Centre, 2023.
+\url{https://emergency.copernicus.eu}
+
+\end{thebibliography}
+
+\end{document}

@@ -1,0 +1,88 @@
+{
+    "evaluation_name": "Lab Evaluation 2 - GAN Models with Other Deep Learning Models",
+    "date": "8-Oct-2026",
+    "team": {
+        "team_no": 2,
+        "course": "23CSE473 - Neural Networks and Deep Learning",
+        "faculty": "S. Jenita Bagyammal",
+        "project": "ReliefPlan AI: AI-Powered Disaster Relief Camp Planning"
+    },
+    "student_gan_models": [
+        {
+            "student_name": "Paarthu Reddy",
+            "roll_no": "CB.SC.U4CSE23639",
+            "role": "Team Lead",
+            "model_name": "Pix2Pix Conditional GAN (cGAN)",
+            "paradigm": "Supervised Paired Image-to-Image Translation",
+            "generator_architecture": "U-Net 256 (8 Down, 8 Up with Skip Connections)",
+            "discriminator_architecture": "70x70 PatchGAN Markovian Discriminator",
+            "parameters_generator": 54413955,
+            "parameters_discriminator": 2769089,
+            "parameters_total": 57183044,
+            "model_size_mb": 218.14,
+            "gpu_latency_ms": 14.48,
+            "cpu_latency_ms": 83.42,
+            "throughput_fps_gpu": 69.1,
+            "ssim": 0.1719,
+            "psnr_db": 12.1,
+            "laplacian_edge_sharpness": 4443.1,
+            "unhcr_compliance_pct": 90.0,
+            "hazard_violation_rate_pct": 2.72,
+            "noise_robustness_degradation_pct": 65.2,
+            "loss_formulation": "L_cGAN(G, D) + 100 * L1(G)",
+            "use_case_in_case_study": "Generates crisp, highly structured UNHCR camp blueprints conditioned directly on paired post-disaster satellite imagery."
+        },
+        {
+            "student_name": "Shivam Kharat",
+            "roll_no": "CB.SC.U4CSE23445",
+            "role": "Core Researcher",
+            "model_name": "Cycle-Consistent GAN (CycleGAN)",
+            "paradigm": "Unpaired Domain Adaptation & Image-to-Image Translation",
+            "generator_architecture": "ResNet-6 (6 Residual Bottlenecks with Reflection Padding)",
+            "discriminator_architecture": "Dual 70x70 PatchGAN Discriminators (D_A and D_B)",
+            "parameters_generator": 7841411,
+            "parameters_discriminator": 5532034,
+            "parameters_total": 21214856,
+            "model_size_mb": 80.93,
+            "gpu_latency_ms": 12.01,
+            "cpu_latency_ms": 189.43,
+            "throughput_fps_gpu": 83.3,
+            "ssim": 0.1495,
+            "psnr_db": 9.44,
+            "laplacian_edge_sharpness": 2407.2,
+            "unhcr_compliance_pct": 83.0,
+            "hazard_violation_rate_pct": 6.99,
+            "noise_robustness_degradation_pct": 45.0,
+            "loss_formulation": "L_GAN(G_AB, D_B) + L_GAN(G_BA, D_A) + 10 * L_cyc + 5 * L_identity",
+            "use_case_in_case_study": "Enables zero-shot camp layout generation on disaster sites where paired layout annotations do not exist by learning cycle-consistent domain translation."
+        }
+    ],
+    "ongoing_models_comparison": [
+        {
+            "model_name": "U-Net (Baseline Ongoing)",
+            "paradigm": "Supervised Discriminative Semantic Segmentation",
+            "task": "Pixel-level 7-class terrain classification",
+            "parameters": 31038023,
+            "gpu_latency_ms": 67.6,
+            "cpu_latency_ms": 253.38,
+            "simulated_miou": 74.2,
+            "simulated_accuracy": 88.5,
+            "loss_formulation": "Cross-Entropy + Dice Loss",
+            "primary_strength": "Reliable semantic classification with skip connections",
+            "primary_limitation": "High parameter count (~31M), requires separate downstream heuristic solver for blueprints"
+        },
+        {
+            "model_name": "DeepLabV3+ with ASPP (Proposed Ongoing)",
+            "paradigm": "Supervised Discriminative Semantic Segmentation with Multi-Scale Dilated Convolutions",
+            "task": "Pixel-level 7-class terrain classification",
+            "parameters": 3935783,
+            "gpu_latency_ms": 5.79,
+            "cpu_latency_ms": 108.18,
+            "simulated_miou": 78.6,
+            "simulated_accuracy": 91.3,
+            "loss_formulation": "Weighted Cross-Entropy (LoveDA class balanced) + Soft Dice Loss",
+            "primary_strength": "Ultra-lightweight (~3.9M params), ASPP captures multi-scale context without downsampling",
+            "primary_limitation": "Predicts terrain only; layout optimization is performed via downstream constraint engine"
+        }
+    ]
+}

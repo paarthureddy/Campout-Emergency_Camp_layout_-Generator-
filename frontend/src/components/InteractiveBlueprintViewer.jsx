@@ -7,55 +7,35 @@ function InteractiveBlueprintViewer({
   onOpenReport,
   metrics 
 }) {
-  const [viewMode, setViewMode] = useState('split'); // 'split' | 'blueprint' | 'segmentation' | 'original'
-  const [sliderPos, setSliderPos] = useState(50); // percentage 0-100
+  // Default to side-by-side so user immediately sees both original and generated blueprint!
+  const [viewMode, setViewMode] = useState('sideBySide'); // 'sideBySide' | 'blueprint' | 'original' | 'segmentation'
   const [zoomLevel, setZoomLevel] = useState(1);
-  const [isFullscreen, setIsFullscreen] = useState(false);
   const containerRef = useRef(null);
-  const isDraggingRef = useRef(false);
-
-  // Split-view slider drag handlers
-  const handleMouseDown = () => {
-    isDraggingRef.current = true;
-  };
-
-  const handleMouseUp = () => {
-    isDraggingRef.current = false;
-  };
-
   const [cursorCoords, setCursorCoords] = useState({ x: 128, y: 128 });
 
-  // Mouse move handler for split-slider and cursor coordinate tracker
+  // Track map meters
   const handleMouseMove = (e) => {
     if (!containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
     const relX = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
     const relY = Math.max(0, Math.min(e.clientY - rect.top, rect.height));
 
-    // Calculate map meters (512m x 512m terrain tile standard)
     const meterX = Math.round((relX / rect.width) * 512);
     const meterY = Math.round((relY / rect.height) * 512);
     setCursorCoords({ x: meterX, y: meterY });
-
-    if (isDraggingRef.current) {
-      const percent = Math.round((relX / rect.width) * 100);
-      setSliderPos(percent);
-    }
   };
 
   // Zoom controls
-  const handleZoomIn = () => setZoomLevel((prev) => Math.min(prev + 0.3, 3));
-  const handleZoomOut = () => setZoomLevel((prev) => Math.max(prev - 0.3, 0.8));
+  const handleZoomIn = () => setZoomLevel((prev) => Math.min(prev + 0.25, 2.5));
+  const handleZoomOut = () => setZoomLevel((prev) => Math.max(prev - 0.25, 0.75));
   const handleResetZoom = () => setZoomLevel(1);
 
   // Fullscreen toggle
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
       containerRef.current?.requestFullscreen?.();
-      setIsFullscreen(true);
     } else {
       document.exitFullscreen?.();
-      setIsFullscreen(false);
     }
   };
 
@@ -70,7 +50,7 @@ function InteractiveBlueprintViewer({
     document.body.removeChild(link);
   };
 
-  // Export GeoJSON / CAD summary
+  // Export GeoJSON
   const handleExportGeoJSON = () => {
     const geoData = {
       type: "FeatureCollection",
@@ -122,28 +102,28 @@ function InteractiveBlueprintViewer({
       <div className="viewer-toolbar">
         <div className="mode-tabs">
           <button
-            className={`mode-btn ${viewMode === 'split' ? 'active' : ''}`}
-            onClick={() => setViewMode('split')}
+            className={`mode-btn ${viewMode === 'sideBySide' ? 'active' : ''}`}
+            onClick={() => setViewMode('sideBySide')}
           >
-            ⚡ Split Comparison Slider
-          </button>
-          <button
-            className={`mode-btn ${viewMode === 'blueprint' ? 'active' : ''}`}
-            onClick={() => setViewMode('blueprint')}
-          >
-            🏕️ Blueprint (HD)
-          </button>
-          <button
-            className={`mode-btn ${viewMode === 'segmentation' ? 'active' : ''}`}
-            onClick={() => setViewMode('segmentation')}
-          >
-            🛰️ Terrain Map
+            👁️ Side-by-Side Comparison
           </button>
           <button
             className={`mode-btn ${viewMode === 'original' ? 'active' : ''}`}
             onClick={() => setViewMode('original')}
           >
-            📷 Original Satellite
+            📷 Uploaded Satellite Image
+          </button>
+          <button
+            className={`mode-btn ${viewMode === 'blueprint' ? 'active' : ''}`}
+            onClick={() => setViewMode('blueprint')}
+          >
+            🏕️ Synthesized Camp Blueprint (HD)
+          </button>
+          <button
+            className={`mode-btn ${viewMode === 'segmentation' ? 'active' : ''}`}
+            onClick={() => setViewMode('segmentation')}
+          >
+            🛰️ Terrain Segmentation Map
           </button>
         </div>
 
@@ -165,8 +145,7 @@ function InteractiveBlueprintViewer({
         className="canvas-container" 
         ref={containerRef}
         onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
+        style={{ minHeight: '560px', height: 'auto', padding: '1.2rem', overflow: 'hidden' }}
       >
         {/* Floating Zoom & Viewport Controls */}
         <div className="zoom-controls">
@@ -191,62 +170,119 @@ function InteractiveBlueprintViewer({
         {/* Viewport Frame with Zoom Transformation */}
         <div 
           className="canvas-viewport"
-          style={{ transform: `scale(${zoomLevel})`, transformOrigin: 'center center' }}
+          style={{ 
+            transform: `scale(${zoomLevel})`, 
+            transformOrigin: 'center center',
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center'
+          }}
         >
-          {viewMode === 'split' && (
-            <div className="split-view-box">
-              {/* Background Image: Original Satellite */}
-              <img 
-                src={originalUrl || blueprintUrl} 
-                alt="Original Satellite Base" 
-                className="split-img base-satellite" 
-              />
-              <div className="split-label split-label-left">BEFORE: Raw Satellite Terrain</div>
-
-              {/* Foreground Image: Generated Blueprint clipped by slider position */}
-              <div 
-                className="split-overlay-clip"
-                style={{ width: `${sliderPos}%` }}
-              >
-                <img 
-                  src={blueprintUrl} 
-                  alt="Generated Camp Blueprint" 
-                  className="split-img overlay-blueprint" 
-                />
-                <div className="split-label split-label-right">AFTER: Optimized Camp Blueprint</div>
+          {/* ── Mode 1: SIDE-BY-SIDE (Both images clearly visible together!) ── */}
+          {viewMode === 'sideBySide' && (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))',
+              gap: '1.5rem',
+              width: '100%',
+              maxWidth: '1200px',
+              padding: '0.5rem'
+            }}>
+              {/* Left Box: Uploaded Satellite Image */}
+              <div style={{
+                background: '#070b14',
+                borderRadius: '12px',
+                border: '1px solid rgba(255, 255, 255, 0.15)',
+                overflow: 'hidden',
+                display: 'flex',
+                flexDirection: 'column',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.4)'
+              }}>
+                <div style={{
+                  padding: '0.65rem 1rem',
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  color: '#fff'
+                }}>
+                  <span style={{ fontWeight: '600', fontSize: '0.88rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    📷 1. Raw Satellite Image (Uploaded)
+                  </span>
+                  <span style={{ fontSize: '0.75rem', background: 'rgba(255,255,255,0.1)', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>
+                    Input Terrain
+                  </span>
+                </div>
+                <div style={{ width: '100%', height: '440px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#020617', padding: '0.5rem' }}>
+                  <img 
+                    src={originalUrl || blueprintUrl} 
+                    alt="Original Uploaded Satellite Terrain" 
+                    style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: '6px' }}
+                  />
+                </div>
               </div>
 
-              {/* Vertical Draggable Divider Line */}
-              <div 
-                className="split-divider"
-                style={{ left: `${sliderPos}%` }}
-                onMouseDown={handleMouseDown}
-              >
-                <div className="divider-handle">
-                  <span>◀ ▶</span>
+              {/* Right Box: Synthesized Camp Blueprint */}
+              <div style={{
+                background: '#070b14',
+                borderRadius: '12px',
+                border: '1px solid rgba(37, 99, 235, 0.4)',
+                overflow: 'hidden',
+                display: 'flex',
+                flexDirection: 'column',
+                boxShadow: '0 8px 24px rgba(37, 99, 235, 0.15)'
+              }}>
+                <div style={{
+                  padding: '0.65rem 1rem',
+                  background: 'rgba(37, 99, 235, 0.15)',
+                  borderBottom: '1px solid rgba(37, 99, 235, 0.3)',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  color: '#93c5fd'
+                }}>
+                  <span style={{ fontWeight: '600', fontSize: '0.88rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    🏕️ 2. Optimized Camp Blueprint (AI Generated)
+                  </span>
+                  <span style={{ fontSize: '0.75rem', background: '#2563eb', color: '#fff', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: 'bold' }}>
+                    1024×1024 HD
+                  </span>
+                </div>
+                <div style={{ width: '100%', height: '440px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#020617', padding: '0.5rem' }}>
+                  <img 
+                    src={blueprintUrl} 
+                    alt="Synthesized Camp Blueprint" 
+                    style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: '6px' }}
+                  />
                 </div>
               </div>
             </div>
           )}
 
+          {/* ── Mode 2: FULL BLUEPRINT ── */}
           {viewMode === 'blueprint' && (
-            <div className="single-view-box">
-              <img src={blueprintUrl} alt="Camp Blueprint" className="single-img" />
-              <div className="view-status-tag">1024×1024 GIS Blueprint (HD)</div>
+            <div className="single-view-box" style={{ width: '100%', maxWidth: '850px', height: '520px' }}>
+              <img src={blueprintUrl} alt="Camp Blueprint" className="single-img" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+              <div className="view-status-tag">1024×1024 GIS Blueprint (HD) • Sphere Standard Compliant</div>
             </div>
           )}
 
-          {viewMode === 'segmentation' && (
-            <div className="single-view-box">
-              <img src={segmentationUrl} alt="Terrain Segmentation Map" className="single-img" />
-              <div className="view-status-tag">7-Class Semantic Segmentation</div>
-            </div>
-          )}
-
+          {/* ── Mode 3: FULL ORIGINAL ── */}
           {viewMode === 'original' && (
-            <div className="single-view-box">
-              <img src={originalUrl || blueprintUrl} alt="Original Satellite Image" className="single-img" />
+            <div className="single-view-box" style={{ width: '100%', maxWidth: '850px', height: '520px' }}>
+              <img src={originalUrl || blueprintUrl} alt="Original Satellite Image" className="single-img" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
               <div className="view-status-tag">Raw Satellite Terrain Ingestion</div>
+            </div>
+          )}
+
+          {/* ── Mode 4: FULL SEGMENTATION ── */}
+          {viewMode === 'segmentation' && (
+            <div className="single-view-box" style={{ width: '100%', maxWidth: '850px', height: '520px' }}>
+              <img src={segmentationUrl} alt="Terrain Segmentation Map" className="single-img" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+              <div className="view-status-tag">7-Class Semantic Segmentation (LoveDA Benchmark)</div>
             </div>
           )}
         </div>
@@ -264,11 +300,7 @@ function InteractiveBlueprintViewer({
 
       {/* Guidance Subtext */}
       <div className="viewer-footer-hint">
-        {viewMode === 'split' ? (
-          <span>💡 <strong>Drag the vertical slider</strong> left and right to inspect how camp roads and shelters adapt to the terrain contours. Move mouse over the map for live GPS meter coordinates.</span>
-        ) : (
-          <span>🔍 Use zoom controls or press <strong>⛶ Fullscreen</strong> for detailed high-resolution inspection.</span>
-        )}
+        <span>💡 <strong>Side-by-side mode active:</strong> Direct visual comparison between your raw overhead image and the synthesized camp layout. Use tabs above for full HD inspection.</span>
       </div>
     </div>
   );

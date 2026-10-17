@@ -64,14 +64,14 @@ function TerrainBreakdown({ breakdown }) {
   );
 }
 
-function Dashboard({ status, results }) {
+function Dashboard({ status, results, onBack }) {
   const [showReportModal, setShowReportModal] = useState(false);
   const [inspectedFacility, setInspectedFacility] = useState(null); // 'medical' | 'food' | 'water_tank' | 'water' | 'latrines' | 'admin'
 
   const isProcessing = status === 'uploading' || status === 'processing';
 
   if (isProcessing) {
-    return <MissionProcessingState status={status} />;
+    return <MissionProcessingState status={status} onBack={onBack} />;
   }
 
   const { original_url, segmentation_url, blueprint_url, metrics, facilities, terrain_breakdown } = results || {};
@@ -92,6 +92,31 @@ function Dashboard({ status, results }) {
 
   return (
     <div className="dashboard-results">
+      {/* ── Back Navigation Bar ── */}
+      <div style={{ marginBottom: '1.2rem', display: 'flex', alignItems: 'center' }}>
+        <button 
+          onClick={onBack} 
+          className="btn-back"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border-color)',
+            padding: '0.6rem 1.2rem',
+            borderRadius: '10px',
+            cursor: 'pointer',
+            fontWeight: '600',
+            color: 'var(--text-main)',
+            fontSize: '0.92rem',
+            boxShadow: 'var(--shadow-sm)',
+            transition: 'all 0.2s ease'
+          }}
+        >
+          ← Back to Create Map / Upload
+        </button>
+      </div>
+
       {/* ── Top Header Actions ── */}
       <div className="dashboard-header-bar">
         <div>
@@ -112,7 +137,7 @@ function Dashboard({ status, results }) {
             📋 Official Deployment Brief (PDF)
           </button>
           <button 
-            onClick={() => window.location.reload()} 
+            onClick={onBack} 
             className="action-btn reset-btn"
           >
             🔄 Ingest Another Image

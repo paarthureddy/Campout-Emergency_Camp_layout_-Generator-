@@ -8,7 +8,7 @@ const PIPELINE_STAGES = [
   { step: 5, label: 'Cartographic GIS Blueprint Synthesis', desc: 'Rendering 1024x1024 vector blueprint and cartographic HUD' }
 ];
 
-function MissionProcessingState({ status }) {
+function MissionProcessingState({ status, onBack }) {
   const [activeStage, setActiveStage] = useState(1);
 
   useEffect(() => {
@@ -22,6 +22,24 @@ function MissionProcessingState({ status }) {
 
   return (
     <div className="mission-processing-card glass-panel">
+      {onBack && (
+        <div style={{ marginBottom: '1rem' }}>
+          <button 
+            onClick={onBack}
+            style={{
+              background: 'none',
+              border: '1px solid var(--border-color)',
+              color: 'var(--text-muted)',
+              padding: '0.4rem 0.8rem',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontSize: '0.85rem'
+            }}
+          >
+            ← Cancel & Back
+          </button>
+        </div>
+      )}
       <div className="processing-header">
         <div className="pulse-radar">
           <div className="radar-sweep"></div>
